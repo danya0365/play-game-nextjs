@@ -17,6 +17,15 @@ import {
   applyTicTacToeAction,
   createTicTacToeState,
 } from "@/src/domain/types/gameState";
+import type {
+  RockPaperScissorsAction,
+  RockPaperScissorsState,
+  RPSChoice,
+} from "@/src/domain/types/rockPaperScissorsState";
+import {
+  applyRockPaperScissorsAction,
+  createRockPaperScissorsState,
+} from "@/src/domain/types/rockPaperScissorsState";
 import type { P2PMessage } from "@/src/domain/types/room";
 import { peerManager } from "@/src/infrastructure/p2p/peerManager";
 import { create } from "zustand";
@@ -25,7 +34,7 @@ import { useRoomStore } from "./roomStore";
 import { useUserStore } from "./userStore";
 
 // Union type for all game states
-type AnyGameState = TicTacToeState | ConnectFourState;
+type AnyGameState = TicTacToeState | ConnectFourState | RockPaperScissorsState;
 
 /**
  * Game Store State
@@ -56,6 +65,9 @@ interface GameActions {
 
   // Actions - Connect Four
   dropPiece: (column: number, forPlayerId?: string) => void;
+
+  // Actions - Rock Paper Scissors
+  makeRPSChoice: (choice: RPSChoice, forPlayerId?: string) => void;
 
   // P2P handlers
   handleGameMessage: (message: P2PMessage) => void;
@@ -119,6 +131,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     switch (room.gameSlug) {
       case "connect-four":
         state = createConnectFourState(room.id, gamePlayers, aiGamePlayer);
+        break;
+      case "rock-paper-scissors":
+        state = createRockPaperScissorsState(
+          room.id,
+          gamePlayers,
+          aiGamePlayer
+        );
         break;
       case "tic-tac-toe":
       default:
@@ -184,6 +203,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     switch (room.gameSlug) {
       case "connect-four":
         newState = createConnectFourState(
+          room.id,
+          gameState.players.filter((p) => !p.isAI),
+          aiGamePlayer
+        );
+        break;
+      case "rock-paper-scissors":
+        newState = createRockPaperScissorsState(
           room.id,
           gameState.players.filter((p) => !p.isAI),
           aiGamePlayer
@@ -329,6 +355,57 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }));
 
     set({ gameState: newState, selectedCell: null });
+
+    // Check if game ended
+    if (newState.status === "finished") {
+      set({ isPlaying: false, showResult: true });
+    }
+
+    // Broadcast action
+    const room = useRoomStore.getState().room;
+    if (room) {
+      peerManager.broadcast("game_action", { action, newState });
+    }
+  },
+
+  /**
+   * Make RPS choice
+   * @param choice - Rock, Paper, or Scissors
+   * @param forPlayerId - Optional player ID (for AI moves)
+   */
+  makeRPSChoice: (choice: RPSChoice, forPlayerId?: string) => {
+    const { gameState, isPlaying } = get();
+    if (!gameState || !isPlaying) return;
+
+    // Type guard for Rock Paper Scissors
+    if (!("phase" in gameState) || !("player1CurrentChoice" in gameState))
+      return;
+
+    const rpsState = gameState as RockPaperScissorsState;
+    const user = useUserStore.getState().user;
+
+    // Determine which player is making the choice
+    const playerId = forPlayerId ?? user?.id;
+    if (!playerId) return;
+
+    // Check if player is in the game
+    if (playerId !== rpsState.player1 && playerId !== rpsState.player2) {
+      console.log("[makeRPSChoice] Player not in game:", playerId);
+      return;
+    }
+
+    // Create action
+    const action: RockPaperScissorsAction = {
+      type: "make_choice",
+      playerId,
+      timestamp: Date.now(),
+      data: { choice },
+    };
+
+    // Apply action locally
+    const newState = applyRockPaperScissorsAction(rpsState, action);
+
+    set({ gameState: newState });
 
     // Check if game ended
     if (newState.status === "finished") {

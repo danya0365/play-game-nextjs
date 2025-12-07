@@ -2,6 +2,7 @@
 
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
 import { ConnectFourView } from "../games/connect-four/ConnectFourView";
+import { RockPaperScissorsView } from "../games/rock-paper-scissors/RockPaperScissorsView";
 import { TicTacToeView } from "../games/tictactoe/TicTacToeView";
 import { GameLayout } from "./GameLayout";
 
@@ -30,9 +31,8 @@ export function GamePlayView() {
     case "connect-four":
       return <ConnectFourView />;
 
-    // Add more games here as they are implemented
-    // case "chess":
-    //   return <ChessView />;
+    case "rock-paper-scissors":
+      return <RockPaperScissorsView />;
 
     default:
       return (

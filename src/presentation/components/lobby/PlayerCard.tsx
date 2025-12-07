@@ -47,7 +47,7 @@ export function PlayerCard({
 }: PlayerCardProps) {
   return (
     <div
-      className={`relative flex items-center gap-3 p-3 rounded-xl border transition-all ${
+      className={`relative flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border transition-all ${
         isCurrentUser
           ? "bg-info/5 border-info/30"
           : player.isConnected
@@ -57,7 +57,7 @@ export function PlayerCard({
     >
       {/* Avatar */}
       <div className="relative">
-        <span className="text-3xl">{player.avatar}</span>
+        <span className="text-2xl sm:text-3xl">{player.avatar}</span>
         {/* Host Crown */}
         {player.isHost && (
           <Crown className="absolute -top-2 -right-1 w-4 h-4 text-warning fill-warning" />
@@ -128,7 +128,7 @@ export function PlayerCard({
  */
 export function EmptyPlayerSlot({ index }: { index: number }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-xl border border-dashed border-border/50 bg-surface/30">
+    <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-dashed border-border/50 bg-surface/30">
       <div className="w-10 h-10 rounded-full bg-muted-light dark:bg-muted-dark flex items-center justify-center">
         <span className="text-muted text-lg">?</span>
       </div>

@@ -234,7 +234,7 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
       >
         <div className="h-full flex flex-col lg:flex-row">
           {/* Left Panel - Players */}
-          <div className="flex-1 flex flex-col p-4 overflow-hidden">
+          <div className="flex-1 flex flex-col px-3 py-3 sm:p-4 overflow-hidden">
             {/* Players Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -324,11 +324,13 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
           </div>
 
           {/* Right Panel - Actions */}
-          <div className="shrink-0 lg:w-80 p-4 border-t lg:border-t-0 lg:border-l border-border bg-surface">
-            <div className="h-full flex flex-col gap-4">
+          <div className="shrink-0 lg:w-80 px-3 py-3 sm:p-4 border-t lg:border-t-0 lg:border-l border-border bg-surface">
+            <div className="h-full flex flex-col gap-3 sm:gap-4">
               {/* Invite Section */}
-              <div className="p-4 rounded-xl bg-background border border-border">
-                <h3 className="font-semibold mb-3">เชิญเพื่อน</h3>
+              <div className="p-3 sm:p-4 rounded-xl bg-background border border-border">
+                <h3 className="font-semibold mb-2 sm:mb-3 text-sm sm:text-base">
+                  เชิญเพื่อน
+                </h3>
 
                 {/* Room Code */}
                 <div className="mb-3">
@@ -370,7 +372,7 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
               <div className="flex-1" />
 
               {/* Action Buttons */}
-              <div className="space-y-2">
+              <div className="space-y-2 pb-safe">
                 {/* Ready Button (non-host) */}
                 {!isHost && currentPlayer && (
                   <button

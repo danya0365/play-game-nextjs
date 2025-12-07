@@ -13,5 +13,6 @@ export {
   WaitingOverlay,
 } from "./GameOverlays";
 export type { GameResult, PlayerScore } from "./GameOverlays";
+export { GamePlayView } from "./GamePlayView";
 export { GameViewBase } from "./GameViewBase";
 export type { GameViewBaseProps } from "./GameViewBase";

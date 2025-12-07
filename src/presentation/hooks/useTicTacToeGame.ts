@@ -26,8 +26,11 @@ export function useTicTacToeGame() {
   const { placeMark } = useGameStore();
   const { playPlaceMark } = useSound();
 
+  // Cast to TicTacToeState
+  const ttState = gameState as TicTacToeState | null;
+
   // TicTacToe-specific: determine player mark
-  const myMark = gameState?.playerX === user?.id ? "X" : "O";
+  const myMark = ttState?.playerX === user?.id ? "X" : "O";
   const aiMark = myMark === "X" ? "O" : "X";
 
   // Check if it's AI's turn - must match AI player ID
@@ -82,8 +85,8 @@ export function useTicTacToeGame() {
     // TicTacToe-specific state
     myMark,
     aiMark,
-    board: gameState?.board ?? Array(9).fill(null),
-    winningLine: gameState?.winningLine ?? null,
+    board: ttState?.board ?? Array(9).fill(null),
+    winningLine: ttState?.winningLine ?? null,
 
     // AI state
     isAIEnabled,

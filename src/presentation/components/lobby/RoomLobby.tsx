@@ -47,6 +47,13 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   const [copied, setCopied] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
 
+  // Redirect to game when playing
+  useEffect(() => {
+    if (room?.status === "playing") {
+      router.push(`/play/${hostPeerId}`);
+    }
+  }, [room?.status, hostPeerId, router]);
+
   // Initialize connection and join room
   useEffect(() => {
     const init = async () => {
@@ -160,7 +167,6 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   const hasEnoughPlayers = room.players.length >= room.config.minPlayers;
   const canStart = isHost && allPlayersReady && hasEnoughPlayers;
 
-  // Game started - redirect to game
   if (room.status === "playing" || room.status === "starting") {
     return (
       <LobbyLayout title="เกมกำลังเริ่ม..." showBack={false}>

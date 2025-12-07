@@ -1,0 +1,162 @@
+{
+  "card_games": {
+    "name": "เกมไพ่",
+    "categories": {
+      "classic": {
+        "name": "ไพ่คลาสสิก",
+        "games": [
+          "ดัมมี่",
+          "ป๊อกเด้ง",
+          "เก้าเก",
+          "Blackjack",
+          "Texas Hold’em",
+          "Omaha Poker",
+          "Baccarat",
+          "สลาฟ",
+          "Big Two",
+          "UNO",
+          "Speed",
+          "Hearts",
+          "Spades",
+          "Gin Rummy",
+          "Go Fish",
+          "Crazy Eights"
+        ]
+      },
+      "party_bluff": {
+        "name": "เกมไพ่ปาร์ตี้ / Bluff",
+        "games": ["Liar Card", "Cheat / Bluff", "Red Dog", "Mau Mau"]
+      }
+    }
+  },
+
+  "board_games": {
+    "name": "บอร์ดเกม",
+    "categories": {
+      "strategy": {
+        "name": "วางแผน / กลยุทธ์",
+        "games": [
+          "Chess",
+          "Checkers",
+          "Reversi / Othello",
+          "Go",
+          "Connect 4",
+          "Tic Tac Toe",
+          "Gomoku",
+          "Nine Men's Morris",
+          "Battleship"
+        ]
+      },
+      "party": {
+        "name": "ปาร์ตี้ / ลุ้นดวง",
+        "games": [
+          "Bingo",
+          "Snakes & Ladders",
+          "Ludo",
+          "Monopoly (Lite)",
+          "Sorry!",
+          "Clue (Lite)"
+        ]
+      },
+      "word_and_guess": {
+        "name": "ทายคำ / วาดภาพ",
+        "games": [
+          "Charades",
+          "Pictionary",
+          "Taboo",
+          "Heads Up",
+          "Scattergories"
+        ]
+      }
+    }
+  },
+
+  "party_games": {
+    "name": "เกมปาร์ตี้ / เดาใจ",
+    "categories": {
+      "social_deduction": {
+        "name": "จับโกหก / หาตัวร้าย",
+        "games": ["Mafia", "Werewolf", "Spyfall", "Secret Hitler", "Codenames"]
+      },
+      "quiz_and_challenge": {
+        "name": "เกมตอบคำถาม",
+        "games": [
+          "Trivia Quiz",
+          "Guess the Song",
+          "Movie Quiz",
+          "20 Questions",
+          "Would You Rather",
+          "Truth or Dare"
+        ]
+      }
+    }
+  },
+
+  "casino": {
+    "name": "คาสิโน",
+    "categories": {
+      "table_games": {
+        "name": "เกมโต๊ะ",
+        "games": [
+          "Blackjack",
+          "Baccarat",
+          "Roulette",
+          "Sic Bo",
+          "Dragon Tiger",
+          "Three Card Poker"
+        ]
+      },
+      "machine_games": {
+        "name": "เกมตู้ / สล็อต",
+        "games": ["Slot Machine", "Video Poker", "Keno"]
+      }
+    }
+  },
+
+  "casual_multiplayer": {
+    "name": "เกมเล่นหลายคนแบบง่าย (P2P-friendly)",
+    "categories": {
+      "duel": {
+        "name": "แข่งตัวต่อตัว",
+        "games": [
+          "Rock Paper Scissors",
+          "Fast Typing Duel",
+          "Reaction Speed Test"
+        ]
+      },
+      "arena": {
+        "name": "สนามประลอง",
+        "games": [
+          "Snake Battle",
+          "Bomberman Mini",
+          "Tank Battle",
+          "Tron Light Cycle"
+        ]
+      }
+    }
+  },
+
+  "puzzle_and_word": {
+    "name": "ปริศนา / คำศัพท์",
+    "categories": {
+      "word": {
+        "name": "เกมคำศัพท์",
+        "games": [
+          "Hangman",
+          "Word Guess",
+          "Crossword Race",
+          "Word Search Battle"
+        ]
+      },
+      "memory_logic": {
+        "name": "ความจำ / ตรรกะ",
+        "games": [
+          "Memory Pair",
+          "True/False Game",
+          "Number Puzzle",
+          "Matching Puzzle"
+        ]
+      }
+    }
+  }
+}

@@ -1,10 +1,14 @@
-ช่วยเขียน TODO สำหรับโปรเจค /Users/marosdeeuma/card-game-p2p-nextjs
+ช่วยเขียน TODO สำหรับโปรเจค /Users/marosdeeuma/play-game-nextjs
 
-เขียนเว็บรวมเกมไพ่ เช่น ไพ่สลาฟ ไพ่แคง ไพ่ป๊อกเดง ไพ่โปกเกอร์ ไพ่ไทยดัมมี่ และเกมไพ่อื่นๆที่คิดว่าต้องมี โดยออกแบบระบบ แบบมืออาชีพที่เว็บใหญ่ๆ เขาทำกัน
+เว็บเกมออนไลน์ เอาไว้ p2p เล่นกับเพื่อนหลายๆ เกม ช่วยลิสต์รายการเกมทั้งหมด แยกตาม category ให้ด้วยคับ
 
-โดยทุกครั้งที่สร้าง page.tsx ต้องทำตาม rule ที่เขียนไว้ที่ /Users/marosdeeuma/card-game-p2p-nextjs/prompt/CREATE_PAGE_PATTERN.md
+ตามข้อมูลเกมที่มีอยู่ในไฟล์ /Users/marosdeeuma/play-game-nextjs/prompt/games.json
 
-โดยเราจะทำ phase 1 ด้วย peerjs (p2p ไม่เน้น security)
+โดยทุกครั้งที่สร้าง page.tsx ต้องทำตาม rule ที่เขียนไว้ที่ /Users/marosdeeuma/play-game-nextjs/prompt/CREATE_PAGE_PATTERN.md
+
+โดยเราจะทำ phase 1 ด้วย peerjs (p2p ไม่เน้น security) และ react-three
+
+ทุกเกมจะวาด Canvas ให้ด้วย react-three และใช้ rapier physics
 
 ต้องมีหน้า landing และหน้าอื่นๆ ที่คิดว่าต้องมี เช่น หน้ารวมเกม
 

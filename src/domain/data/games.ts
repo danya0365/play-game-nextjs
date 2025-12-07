@@ -737,7 +737,7 @@ export const GAMES: GameMeta[] = [
     minPlayers: 2,
     maxPlayers: 2,
     icon: "✊",
-    status: "coming_soon",
+    status: "available",
   },
   {
     slug: "typing-duel",

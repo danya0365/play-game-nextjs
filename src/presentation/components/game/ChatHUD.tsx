@@ -125,9 +125,9 @@ export function ChatHUD() {
     <div className="fixed bottom-20 right-4 z-40 lg:bottom-4 flex flex-col items-end gap-2">
       {/* Chat Panel */}
       {isOpen && (
-        <div className="w-80 max-w-[calc(100vw-2rem)] bg-background dark:bg-surface border border-border rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
+        <div className="w-80 max-w-[calc(100vw-2rem)] bg-surface border border-border rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface dark:bg-muted-dark">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4 text-info" />
               <span className="font-medium text-sm">แชท</span>
@@ -142,7 +142,7 @@ export function ChatHUD() {
           </div>
 
           {/* Messages */}
-          <div className="h-64 overflow-y-auto p-3 space-y-3 bg-background dark:bg-background">
+          <div className="h-64 overflow-y-auto p-3 space-y-3 bg-background">
             {messages.length === 0 ? (
               <div className="h-full flex items-center justify-center text-muted text-sm">
                 ยังไม่มีข้อความ
@@ -154,7 +154,7 @@ export function ChatHUD() {
                   className={`flex gap-2 ${msg.isMe ? "flex-row-reverse" : ""}`}
                 >
                   {/* Avatar */}
-                  <div className="shrink-0 w-8 h-8 rounded-full bg-muted-light dark:bg-muted-dark flex items-center justify-center text-lg">
+                  <div className="shrink-0 w-8 h-8 rounded-full bg-muted flex items-center justify-center text-lg">
                     {msg.senderAvatar}
                   </div>
 
@@ -187,7 +187,7 @@ export function ChatHUD() {
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-border bg-surface dark:bg-surface">
+          <div className="p-3 border-t border-border bg-surface">
             <div className="flex gap-2">
               <input
                 ref={inputRef}
@@ -215,7 +215,7 @@ export function ChatHUD() {
         onClick={() => setIsOpen(!isOpen)}
         className={`relative p-3 rounded-full shadow-lg transition-all ${
           isOpen
-            ? "bg-muted-light dark:bg-muted-dark text-foreground"
+            ? "bg-muted text-foreground"
             : "bg-info text-white hover:bg-info-dark"
         }`}
       >

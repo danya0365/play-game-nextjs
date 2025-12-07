@@ -6,6 +6,7 @@ import { useSound } from "@/src/presentation/stores/soundStore";
 import { useUserStore } from "@/src/presentation/stores/userStore";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef } from "react";
+import { useConnectionStatus } from "./useConnectionStatus";
 
 export interface GameResult {
   type: "win" | "lose" | "draw";
@@ -35,6 +36,9 @@ export function useGameBase() {
     startBgm,
     stopBgm,
   } = useSound();
+
+  // Connection status (ping-pong)
+  const connectionStatus = useConnectionStatus();
 
   // Track previous turn for sound effects
   const prevTurnRef = useRef<string | null>(null);
@@ -178,5 +182,8 @@ export function useGameBase() {
 
     // Sound
     playClick,
+
+    // Connection status
+    connectionStatus,
   };
 }

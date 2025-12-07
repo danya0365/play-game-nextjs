@@ -1,13 +1,36 @@
 "use client";
 
 import type { RoomPlayer } from "@/src/domain/types/room";
+import type { ConnectionQuality } from "@/src/presentation/stores/connectionStore";
 import { Check, Crown, Wifi, WifiOff, X } from "lucide-react";
+
+/**
+ * Get text color for connection quality
+ */
+function getQualityTextColor(quality?: ConnectionQuality): string {
+  switch (quality) {
+    case "excellent":
+      return "text-success";
+    case "good":
+      return "text-info";
+    case "poor":
+      return "text-warning";
+    case "disconnected":
+      return "text-error";
+    default:
+      return "text-success";
+  }
+}
 
 interface PlayerCardProps {
   player: RoomPlayer;
   isCurrentUser?: boolean;
   canKick?: boolean;
   onKick?: () => void;
+  /** Connection quality (if using ping-pong) */
+  connectionQuality?: ConnectionQuality;
+  /** Ping latency in ms */
+  latency?: number;
 }
 
 /**
@@ -19,6 +42,8 @@ export function PlayerCard({
   isCurrentUser = false,
   canKick = false,
   onKick,
+  connectionQuality,
+  latency,
 }: PlayerCardProps) {
   return (
     <div
@@ -52,9 +77,13 @@ export function PlayerCard({
         <div className="flex items-center gap-2 text-xs text-muted">
           {/* Connection Status */}
           {player.isConnected ? (
-            <span className="flex items-center gap-1 text-success">
+            <span
+              className={`flex items-center gap-1 ${getQualityTextColor(
+                connectionQuality
+              )}`}
+            >
               <Wifi className="w-3 h-3" />
-              ออนไลน์
+              {latency !== undefined ? `${latency}ms` : "ออนไลน์"}
             </span>
           ) : (
             <span className="flex items-center gap-1 text-error">

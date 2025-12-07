@@ -1,17 +1,16 @@
 "use client";
 
+import { ConnectionStatus } from "@/src/presentation/components/game/ConnectionStatus";
 import { SoundSettings } from "@/src/presentation/components/ui/SoundSettings";
 import { ThemeToggle } from "@/src/presentation/components/ui/ThemeToggle";
-import { ArrowLeft, Clock, RotateCcw, Users } from "lucide-react";
+import { ArrowLeft, RotateCcw, Users } from "lucide-react";
+// Note: Turn info (currentTurn, isMyTurn, turnNumber) removed from header - shown via TurnIndicator in game view
 import { ReactNode } from "react";
 
 interface GameLayoutProps {
   children: ReactNode;
   gameName: string;
   roomCode?: string;
-  currentTurn?: string;
-  isMyTurn?: boolean;
-  turnNumber?: number;
   players?: Array<{
     id: string;
     nickname: string;
@@ -31,9 +30,6 @@ export function GameLayout({
   children,
   gameName,
   roomCode,
-  currentTurn,
-  isMyTurn,
-  turnNumber,
   players = [],
   onLeave,
   onRestart,
@@ -63,39 +59,20 @@ export function GameLayout({
           </div>
         </div>
 
-        {/* Center - Turn Info */}
-        <div className="flex items-center gap-2">
-          {turnNumber !== undefined && (
-            <div className="flex items-center gap-1 text-xs text-muted">
-              <Clock className="w-3 h-3" />
-              <span>ตา {turnNumber}</span>
-            </div>
-          )}
-
-          {currentTurn && (
-            <div
-              className={`px-3 py-1 rounded-full text-sm font-medium ${
-                isMyTurn
-                  ? "bg-success/10 text-success border border-success/30"
-                  : "bg-muted-light dark:bg-muted-dark text-muted"
-              }`}
-            >
-              {isMyTurn ? "ตาคุณ!" : `รอ ${currentTurn}`}
-            </div>
-          )}
-        </div>
+        {/* Turn Info moved to game view (TurnIndicator component) */}
 
         {/* Right */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2">
           {showRestart && onRestart && (
             <button
               onClick={onRestart}
-              className="p-2 rounded-lg hover:bg-muted-light dark:hover:bg-muted-dark transition-colors"
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
               title="เล่นใหม่"
             >
               <RotateCcw className="w-4 h-4" />
             </button>
           )}
+          <ConnectionStatus inline size="sm" />
           <SoundSettings />
           <ThemeToggle />
         </div>
@@ -140,18 +117,25 @@ export function GameLayout({
 
       {/* Mobile Players Bar */}
       {players.length > 0 && (
-        <div className="lg:hidden shrink-0 h-16 border-t border-border bg-surface flex items-center justify-around px-2">
+        <div className="lg:hidden shrink-0 h-14 border-t border-border bg-surface flex items-center justify-center gap-4 px-4">
           {players.map((player) => (
             <div
               key={player.id}
-              className={`flex flex-col items-center p-2 rounded-lg ${
-                player.isActive ? "bg-info/10" : ""
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
+                player.isActive
+                  ? "bg-info/10 border border-info/30"
+                  : "bg-background/50"
               }`}
             >
-              <span className="text-2xl">{player.avatar}</span>
-              <span className="text-xs truncate max-w-[60px]">
-                {player.nickname}
-              </span>
+              <span className="text-lg">{player.avatar}</span>
+              <div className="flex flex-col">
+                <span className="text-xs font-medium truncate max-w-[80px]">
+                  {player.nickname}
+                </span>
+                <span className="text-[10px] text-muted">
+                  {player.score} คะแนน
+                </span>
+              </div>
             </div>
           ))}
         </div>

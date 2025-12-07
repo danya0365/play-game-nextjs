@@ -1,7 +1,69 @@
 "use client";
 
-import { Monitor, RotateCcw, Smartphone } from "lucide-react";
+import { Bot, Clock, Monitor, RotateCcw, Smartphone } from "lucide-react";
 import { ReactNode } from "react";
+
+/**
+ * Game Status Bar - Shows turn number, AI mode, current turn
+ */
+interface GameStatusProps {
+  turnNumber?: number;
+  isMyTurn: boolean;
+  mySymbol?: string;
+  opponentName?: string;
+  isAIEnabled?: boolean;
+  aiDifficulty?: string;
+}
+
+export function GameStatus({
+  turnNumber,
+  isMyTurn,
+  mySymbol,
+  opponentName,
+  isAIEnabled,
+  aiDifficulty,
+}: GameStatusProps) {
+  return (
+    <div className="absolute top-14 left-1/2 -translate-x-1/2 z-10 w-full max-w-sm px-4">
+      <div className="flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-surface/90 backdrop-blur-sm border border-border shadow-lg">
+        {/* Turn Number */}
+        {turnNumber !== undefined && (
+          <div className="flex items-center gap-1 text-xs text-muted">
+            <Clock className="w-3 h-3" />
+            <span>ตา {turnNumber}</span>
+          </div>
+        )}
+
+        {/* Separator */}
+        {turnNumber !== undefined && <span className="text-border">•</span>}
+
+        {/* AI Mode */}
+        {isAIEnabled && (
+          <>
+            <div className="flex items-center gap-1 text-xs text-info">
+              <Bot className="w-3 h-3" />
+              <span>AI {aiDifficulty}</span>
+            </div>
+            <span className="text-border">•</span>
+          </>
+        )}
+
+        {/* Current Turn */}
+        <div
+          className={`text-xs font-medium ${
+            isMyTurn ? "text-success" : "text-foreground"
+          }`}
+        >
+          {isMyTurn ? (
+            <span>ตาคุณ!{mySymbol ? ` (${mySymbol})` : ""}</span>
+          ) : (
+            <span>รอ {opponentName ?? "คู่แข่ง"}...</span>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Turn Indicator Overlay
@@ -10,22 +72,39 @@ interface TurnIndicatorProps {
   isMyTurn: boolean;
   mySymbol?: string;
   opponentName?: string;
+  turnNumber?: number;
 }
 
 export function TurnIndicator({
   isMyTurn,
   mySymbol,
   opponentName,
+  turnNumber,
 }: TurnIndicatorProps) {
   return (
-    <div className="absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-10">
+    <div className="absolute bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-10">
       <div
-        className={`px-4 md:px-6 py-2 md:py-3 rounded-full font-medium shadow-lg text-sm md:text-base ${
+        className={`flex items-center gap-2 px-3 md:px-6 py-1.5 md:py-3 rounded-full font-medium shadow-lg text-xs md:text-base ${
           isMyTurn
             ? "bg-success text-white"
             : "bg-surface border border-border text-foreground"
         }`}
       >
+        {/* Turn Number */}
+        {turnNumber !== undefined && (
+          <span className={`${isMyTurn ? "text-white/80" : "text-muted"}`}>
+            ตา {turnNumber}
+          </span>
+        )}
+
+        {/* Separator */}
+        {turnNumber !== undefined && (
+          <span className={`${isMyTurn ? "text-white/50" : "text-border"}`}>
+            •
+          </span>
+        )}
+
+        {/* Turn Status */}
         {isMyTurn ? (
           <span>ตาคุณ!{mySymbol ? ` (${mySymbol})` : ""}</span>
         ) : (
@@ -86,9 +165,7 @@ export function RenderModeToggle({ is2D, onToggle }: RenderModeToggleProps) {
         <button
           onClick={onToggle}
           className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
-            !is2D
-              ? "bg-info text-white"
-              : "hover:bg-muted-light dark:hover:bg-muted-dark"
+            !is2D ? "bg-info text-white" : "hover:bg-muted"
           }`}
           title="สลับโหมด 3D/2D"
         >
@@ -118,19 +195,21 @@ interface WaitingOverlayProps {
 
 export function WaitingOverlay({ onViewResult }: WaitingOverlayProps) {
   return (
-    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-40">
-      <div className="bg-surface border border-border rounded-2xl p-6 max-w-xs w-full mx-4 text-center">
+    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-40 p-4">
+      <div className="bg-surface border border-border rounded-2xl p-4 md:p-6 max-w-xs w-full text-center">
         <div className="flex justify-center mb-3">
-          <div className="w-12 h-12 rounded-full bg-info/10 flex items-center justify-center">
-            <RotateCcw className="w-6 h-6 text-info animate-spin" />
+          <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-info/10 flex items-center justify-center">
+            <RotateCcw className="w-5 h-5 md:w-6 md:h-6 text-info animate-spin" />
           </div>
         </div>
-        <h3 className="font-semibold mb-1">รอ Host</h3>
-        <p className="text-sm text-muted mb-4">รอ Host เริ่มเกมใหม่...</p>
+        <h3 className="font-semibold mb-1 text-sm md:text-base">รอ Host</h3>
+        <p className="text-xs md:text-sm text-muted mb-4">
+          รอ Host เริ่มเกมใหม่...
+        </p>
         {onViewResult && (
           <button
             onClick={onViewResult}
-            className="text-sm text-info hover:underline"
+            className="text-xs md:text-sm text-info hover:underline"
           >
             ดูผลลัพธ์อีกครั้ง
           </button>
@@ -150,19 +229,21 @@ interface HostActionBarProps {
 
 export function HostActionBar({ onRestart, onViewResult }: HostActionBarProps) {
   return (
-    <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-40">
-      <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface border border-border shadow-lg">
-        <span className="text-sm text-muted">เกมจบแล้ว</span>
+    <div className="absolute bottom-20 md:bottom-24 left-1/2 -translate-x-1/2 z-40 px-4 w-full max-w-md">
+      <div className="flex items-center justify-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 rounded-xl bg-surface border border-border shadow-lg">
+        <span className="text-xs md:text-sm text-muted whitespace-nowrap hidden sm:inline">
+          เกมจบแล้ว
+        </span>
         <button
           onClick={onRestart}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-info text-white font-medium hover:bg-info-dark transition-colors"
+          className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg bg-info text-white text-sm md:text-base font-medium hover:bg-info-dark transition-colors whitespace-nowrap"
         >
-          <RotateCcw className="w-4 h-4" />
-          เล่นใหม่
+          <RotateCcw className="w-4 h-4 shrink-0" />
+          <span>เล่นใหม่</span>
         </button>
         <button
           onClick={onViewResult}
-          className="px-4 py-2 rounded-lg border border-border hover:bg-muted-light dark:hover:bg-muted-dark transition-colors"
+          className="px-3 md:px-4 py-2 rounded-lg border border-border text-sm md:text-base hover:bg-muted transition-colors whitespace-nowrap"
         >
           ดูผล
         </button>
@@ -205,47 +286,59 @@ export function GameResultModal({
   onClose,
 }: GameResultModalProps) {
   return (
-    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-surface border border-border rounded-2xl p-8 max-w-sm w-full mx-4 text-center animate-in zoom-in-95">
+    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-surface border border-border rounded-2xl p-4 md:p-8 max-w-sm w-full text-center animate-in zoom-in-95">
         {/* Icon */}
-        <div className="flex justify-center mb-4">{icon}</div>
+        <div className="flex justify-center mb-3 md:mb-4 scale-75 md:scale-100">
+          {icon}
+        </div>
 
         {/* Title & Subtitle */}
-        <h2 className="text-2xl font-bold mb-2">{result.title}</h2>
-        <p className="text-muted mb-6">{result.subtitle}</p>
+        <h2 className="text-xl md:text-2xl font-bold mb-1 md:mb-2">
+          {result.title}
+        </h2>
+        <p className="text-sm md:text-base text-muted mb-4 md:mb-6">
+          {result.subtitle}
+        </p>
 
         {/* Scores */}
-        <div className="flex justify-center gap-8 mb-6">
+        <div className="flex justify-center gap-6 md:gap-8 mb-4 md:mb-6">
           {players.map((p) => (
             <div key={p.id} className="text-center">
-              <span className="text-3xl">{p.avatar}</span>
-              <p className="text-sm font-medium mt-1">{p.nickname}</p>
-              <p className="text-2xl font-bold text-info">{p.score}</p>
+              <span className="text-2xl md:text-3xl">{p.avatar}</span>
+              <p className="text-xs md:text-sm font-medium mt-1 truncate max-w-[80px]">
+                {p.nickname}
+              </p>
+              <p className="text-xl md:text-2xl font-bold text-info">
+                {p.score}
+              </p>
             </div>
           ))}
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex gap-2 md:gap-3">
           {isHost && onRestart && (
             <button
               onClick={onRestart}
-              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-info text-white font-medium hover:bg-info-dark transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-4 py-2.5 md:py-3 rounded-xl bg-info text-white text-sm md:text-base font-medium hover:bg-info-dark transition-colors"
             >
-              <RotateCcw className="w-5 h-5" />
-              เล่นอีกครั้ง
+              <RotateCcw className="w-4 h-4 md:w-5 md:h-5 shrink-0" />
+              <span>เล่นอีกครั้ง</span>
             </button>
           )}
           <button
             onClick={onClose}
-            className="flex-1 px-4 py-3 rounded-xl border border-border hover:bg-muted-light dark:hover:bg-muted-dark transition-colors"
+            className="flex-1 px-3 md:px-4 py-2.5 md:py-3 rounded-xl border border-border text-sm md:text-base hover:bg-muted transition-colors"
           >
             ปิด
           </button>
         </div>
 
         {!isHost && (
-          <p className="text-xs text-muted mt-4">รอ Host เริ่มเกมใหม่...</p>
+          <p className="text-xs text-muted mt-3 md:mt-4">
+            รอ Host เริ่มเกมใหม่...
+          </p>
         )}
       </div>
     </div>

@@ -900,6 +900,36 @@ The AI system is designed to be game-agnostic:
 - [ ] AI moves are executed correctly
 - [ ] Sound effects play
 - [ ] Mobile responsive
+- [ ] Connection status indicator shows
+- [ ] Reconnecting overlay shows when host disconnects
+- [ ] Player ping/latency displays correctly
+
+---
+
+## 11. Connection Status System
+
+The connection system provides ping-pong heartbeat for connection monitoring:
+
+| Component                 | Purpose                     | Location           |
+| ------------------------- | --------------------------- | ------------------ |
+| `connectionStore.ts`      | Connection state management | `stores/`          |
+| `useConnectionStatus.ts`  | Connection hook             | `hooks/`           |
+| `ConnectionStatus.tsx`    | UI indicator                | `components/game/` |
+| `ReconnectingOverlay.tsx` | Disconnect overlay          | `components/game/` |
+
+### Features:
+
+- **Host pings clients** every 1 second
+- **Clients respond with pong** automatically
+- **Latency tracking** for each player
+- **Connection quality** indicators (excellent/good/poor/disconnected)
+- **Auto-leave** after 10 seconds of no response
+
+### Already integrated in:
+
+- `GameViewBase` - Shows connection indicator during game
+- `RoomLobby` - Shows connection indicator in waiting room
+- `PlayerCard` - Shows per-player connection quality
 
 ---
 
@@ -915,3 +945,4 @@ This pattern provides a complete, reusable architecture for creating new games w
 - ✅ **Type Safety** - Full TypeScript support
 - ✅ **Sound Effects** - Integrated sound system
 - ✅ **Multiplayer Ready** - P2P architecture support
+- ✅ **Connection Monitoring** - Ping-pong heartbeat with auto-reconnect

@@ -37,6 +37,7 @@ interface GameActions {
   initGame: () => void;
   endGame: () => void;
   resetGame: () => void;
+  clearGame: () => void; // Reset to initial state
 
   // Actions
   placeMark: (cellIndex: number, forPlayerId?: string) => void;
@@ -259,5 +260,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
    */
   setShowResult: (show: boolean) => {
     set({ showResult: show });
+  },
+
+  /**
+   * Clear game state completely (when leaving room)
+   */
+  clearGame: () => {
+    set(initialState);
   },
 }));

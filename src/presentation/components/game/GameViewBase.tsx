@@ -4,18 +4,18 @@ import { useDevicePerformance } from "@/src/presentation/hooks/useDevicePerforma
 import { useAIStore } from "@/src/presentation/stores/aiStore";
 import { Frown, Handshake, Trophy } from "lucide-react";
 import { ReactNode, useState } from "react";
-import { AIIndicator } from "./AISettings";
 import { ChatHUD } from "./ChatHUD";
+import { ReconnectingOverlay } from "./ConnectionStatus";
 import { GameCanvas } from "./GameCanvas";
 import { GameLayout } from "./GameLayout";
 import {
   GameResult,
   GameResultModal,
+  GameStatus,
   HostActionBar,
   PlayerIndicator,
   PlayerScore,
   RenderModeToggle,
-  TurnIndicator,
   WaitingOverlay,
 } from "./GameOverlays";
 
@@ -102,8 +102,24 @@ export function GameViewBase({
   // Device performance detection
   const { isLowEnd, supportsWebGL } = useDevicePerformance();
 
-  // AI state
-  const { enabled: isAIEnabled } = useAIStore();
+  // AI state (used by GameStatus)
+  const {
+    enabled: isAIEnabled,
+    aiPlayer,
+    difficulty: aiDifficulty,
+  } = useAIStore();
+
+  // Get opponent name (AI or real player)
+  const opponentName =
+    isAIEnabled && aiPlayer ? aiPlayer.nickname : currentTurnPlayer?.nickname;
+
+  // AI difficulty label
+  const aiDifficultyLabel =
+    aiDifficulty === "easy"
+      ? "ง่าย"
+      : aiDifficulty === "medium"
+      ? "ปานกลาง"
+      : "ยาก";
 
   // Render mode state
   const [renderMode, setRenderMode] = useState<"auto" | "3d" | "2d">(
@@ -140,9 +156,6 @@ export function GameViewBase({
     <GameLayout
       gameName={gameName}
       roomCode={roomCode}
-      currentTurn={currentTurnPlayer?.nickname}
-      isMyTurn={isMyTurn}
-      turnNumber={turnNumber}
       players={players.map((p) => ({
         id: p.id,
         nickname: p.nickname,
@@ -175,19 +188,15 @@ export function GameViewBase({
       {/* Render Mode Toggle */}
       <RenderModeToggle is2D={shouldUse2D} onToggle={handleToggleRenderMode} />
 
-      {/* AI Indicator */}
-      {isAIEnabled && (
-        <div className="absolute top-2 md:top-4 left-1/2 -translate-x-1/2 z-10">
-          <AIIndicator />
-        </div>
-      )}
-
-      {/* Turn Indicator */}
+      {/* Game Status Bar */}
       {isPlaying && (
-        <TurnIndicator
+        <GameStatus
+          turnNumber={turnNumber}
           isMyTurn={isMyTurn}
           mySymbol={mySymbol}
-          opponentName={currentTurnPlayer?.nickname}
+          opponentName={opponentName}
+          isAIEnabled={isAIEnabled}
+          aiDifficulty={aiDifficultyLabel}
         />
       )}
 
@@ -198,6 +207,11 @@ export function GameViewBase({
 
       {/* Chat HUD */}
       <ChatHUD />
+
+      {/* Connection Status is now in GameLayout header */}
+
+      {/* Reconnecting Overlay */}
+      <ReconnectingOverlay />
 
       {/* Waiting for Host Overlay */}
       {!showResult && isFinished && !isHost && (

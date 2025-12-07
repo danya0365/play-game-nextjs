@@ -13,6 +13,8 @@ import type {
 import { generateId, generateRoomCode } from "@/src/domain/types/room";
 import { peerManager } from "@/src/infrastructure/p2p/peerManager";
 import { create } from "zustand";
+import { useAIStore } from "./aiStore";
+import { useGameStore } from "./gameStore";
 import { useUserStore } from "./userStore";
 
 /**
@@ -280,6 +282,10 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
    * Create a new room as host
    */
   createRoom: async (gameSlug, gameName, config) => {
+    // Reset previous game state
+    useAIStore.getState().resetAI();
+    useGameStore.getState().clearGame();
+
     const user = useUserStore.getState().user;
     if (!user) throw new Error("User not found");
 
@@ -323,6 +329,10 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
    * Join an existing room
    */
   joinRoom: async (hostPeerId) => {
+    // Reset previous game state
+    useAIStore.getState().resetAI();
+    useGameStore.getState().clearGame();
+
     const user = useUserStore.getState().user;
     if (!user) throw new Error("User not found");
 
@@ -380,6 +390,10 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
     peerManager.connectedPeers.forEach((pid) =>
       peerManager.disconnectPeer(pid)
     );
+
+    // Reset AI and game state
+    useAIStore.getState().resetAI();
+    useGameStore.getState().clearGame();
 
     set({
       room: null,

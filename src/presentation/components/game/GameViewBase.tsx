@@ -1,8 +1,10 @@
 "use client";
 
 import { useDevicePerformance } from "@/src/presentation/hooks/useDevicePerformance";
+import { useAIStore } from "@/src/presentation/stores/aiStore";
 import { Frown, Handshake, Trophy } from "lucide-react";
 import { ReactNode, useState } from "react";
+import { AIIndicator } from "./AISettings";
 import { ChatHUD } from "./ChatHUD";
 import { GameCanvas } from "./GameCanvas";
 import { GameLayout } from "./GameLayout";
@@ -100,6 +102,9 @@ export function GameViewBase({
   // Device performance detection
   const { isLowEnd, supportsWebGL } = useDevicePerformance();
 
+  // AI state
+  const { enabled: isAIEnabled } = useAIStore();
+
   // Render mode state
   const [renderMode, setRenderMode] = useState<"auto" | "3d" | "2d">(
     forceRenderMode ?? "auto"
@@ -169,6 +174,13 @@ export function GameViewBase({
 
       {/* Render Mode Toggle */}
       <RenderModeToggle is2D={shouldUse2D} onToggle={handleToggleRenderMode} />
+
+      {/* AI Indicator */}
+      {isAIEnabled && (
+        <div className="absolute top-2 md:top-4 left-1/2 -translate-x-1/2 z-10">
+          <AIIndicator />
+        </div>
+      )}
 
       {/* Turn Indicator */}
       {isPlaying && (

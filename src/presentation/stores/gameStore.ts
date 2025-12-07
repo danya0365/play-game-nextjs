@@ -12,6 +12,7 @@ import {
 import type { P2PMessage } from "@/src/domain/types/room";
 import { peerManager } from "@/src/infrastructure/p2p/peerManager";
 import { create } from "zustand";
+import { useAIStore } from "./aiStore";
 import { useRoomStore } from "./roomStore";
 import { useUserStore } from "./userStore";
 
@@ -38,7 +39,7 @@ interface GameActions {
   resetGame: () => void;
 
   // Actions
-  placeMark: (cellIndex: number) => void;
+  placeMark: (cellIndex: number, forPlayerId?: string) => void;
   selectCell: (cellIndex: number | null) => void;
 
   // P2P handlers
@@ -71,6 +72,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const room = useRoomStore.getState().room;
     if (!room) return;
 
+    // Get AI state
+    const { enabled: isAIEnabled, aiPlayer } = useAIStore.getState();
+
     // Convert room players to game players
     const gamePlayers: GamePlayer[] = room.players.map((p) => ({
       odId: p.odId,
@@ -78,10 +82,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
       avatar: p.avatar,
       score: 0,
       isActive: false,
+      isAI: false,
     }));
 
-    // Create initial state
-    const state = createTicTacToeState(room.id, gamePlayers);
+    // Create AI game player if enabled
+    const aiGamePlayer: GamePlayer | null =
+      isAIEnabled && aiPlayer
+        ? {
+            odId: aiPlayer.id,
+            nickname: aiPlayer.nickname,
+            avatar: aiPlayer.avatar,
+            score: 0,
+            isActive: false,
+            isAI: true,
+          }
+        : null;
+
+    // Create initial state with AI player
+    const state = createTicTacToeState(room.id, gamePlayers, aiGamePlayer);
 
     // Mark current turn player as active
     state.players = state.players.map((p) => ({
@@ -133,16 +151,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   /**
    * Place mark on cell
+   * @param cellIndex - Cell index to place mark
+   * @param forPlayerId - Optional player ID (for AI moves)
    */
-  placeMark: (cellIndex: number) => {
+  placeMark: (cellIndex: number, forPlayerId?: string) => {
     const { gameState, isPlaying } = get();
     if (!gameState || !isPlaying) return;
 
     const user = useUserStore.getState().user;
-    if (!user) return;
 
-    // Check if it's my turn
-    if (gameState.currentTurn !== user.id) return;
+    // Determine which player is making the move
+    const playerId = forPlayerId ?? user?.id;
+    if (!playerId) return;
+
+    // Check if it's this player's turn
+    if (gameState.currentTurn !== playerId) {
+      console.log("[placeMark] Not this player's turn:", {
+        currentTurn: gameState.currentTurn,
+        playerId,
+      });
+      return;
+    }
 
     // Check if cell is empty
     if (gameState.board[cellIndex] !== null) return;
@@ -150,7 +179,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     // Create action
     const action: TicTacToeAction = {
       type: "place_mark",
-      playerId: user.id,
+      playerId,
       timestamp: Date.now(),
       data: { cellIndex },
     };

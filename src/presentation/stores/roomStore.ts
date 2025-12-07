@@ -57,7 +57,7 @@ interface RoomActions {
   kickPlayer: (odId: string) => void;
 
   // Game actions
-  startGame: () => void;
+  startGame: (isAIEnabled?: boolean) => void;
 
   // Internal actions
   handleMessage: (message: P2PMessage, senderPeerId: string) => void;
@@ -433,22 +433,28 @@ export const useRoomStore = create<RoomStore>((set, get) => ({
 
   /**
    * Start the game (host only)
+   * @param isAIEnabled - Whether AI is enabled (counts as a player)
    */
-  startGame: () => {
+  startGame: (isAIEnabled = false) => {
     const { room, isHost } = get();
     if (!room || !isHost) return;
 
+    // Calculate effective player count (AI counts as 1)
+    const effectivePlayerCount = room.players.length + (isAIEnabled ? 1 : 0);
+
     // Check minimum players
-    if (room.players.length < room.config.minPlayers) {
+    if (effectivePlayerCount < room.config.minPlayers) {
       set({ joinError: `ต้องมีผู้เล่นอย่างน้อย ${room.config.minPlayers} คน` });
       return;
     }
 
-    // Check all players ready
-    const allReady = room.players.every((p) => p.isReady);
-    if (!allReady) {
-      set({ joinError: "ผู้เล่นทุกคนต้องพร้อม" });
-      return;
+    // Check all players ready (skip for AI mode with single player)
+    if (!isAIEnabled || room.players.length > 1) {
+      const allReady = room.players.every((p) => p.isReady);
+      if (!allReady) {
+        set({ joinError: "ผู้เล่นทุกคนต้องพร้อม" });
+        return;
+      }
     }
 
     get().updateRoom({ status: "starting" });

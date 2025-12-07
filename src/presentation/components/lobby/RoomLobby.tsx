@@ -1,7 +1,7 @@
 "use client";
 
-import { useSound } from "@/src/presentation/hooks/useSound";
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
+import { useSound } from "@/src/presentation/stores/soundStore";
 import { useUserStore } from "@/src/presentation/stores/userStore";
 import {
   Check,

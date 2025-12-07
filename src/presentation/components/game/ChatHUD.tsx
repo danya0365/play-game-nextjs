@@ -1,7 +1,7 @@
 "use client";
 
 import { peerManager } from "@/src/infrastructure/p2p/peerManager";
-import { useSound } from "@/src/presentation/hooks/useSound";
+import { useSound } from "@/src/presentation/stores/soundStore";
 import { useUserStore } from "@/src/presentation/stores/userStore";
 import { ChevronDown, MessageCircle, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";

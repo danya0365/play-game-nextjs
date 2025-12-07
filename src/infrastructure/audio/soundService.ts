@@ -82,8 +82,8 @@ class SoundService {
 
   setGameBgmStyle(style: GameBgmStyle) {
     this.gameBgmStyle = style;
-    // If game BGM is playing, restart with new style
-    if (this.bgmPlaying && this.currentBgmType === "game") {
+    // If any BGM is playing, restart with new style (switch to game BGM)
+    if (this.bgmPlaying) {
       this.stopBgm();
       this.startBgm("game");
     }
@@ -452,9 +452,34 @@ class SoundService {
     }
   }
 
-  // Waiting room BGM - calm ambient
+  // Waiting room BGM - Lo-fi chill relaxing music
   private playWaitingBgm() {
-    const playAmbientNote = () => {
+    // Chord progressions for chill lo-fi feel (Cmaj7 - Am7 - Fmaj7 - G7)
+    const chordProgressions = [
+      [261.63, 329.63, 392.0, 493.88], // Cmaj7
+      [220.0, 261.63, 329.63, 392.0], // Am7
+      [174.61, 220.0, 261.63, 329.63], // Fmaj7
+      [196.0, 246.94, 293.66, 349.23], // G7
+    ];
+
+    // Pentatonic melody notes for gentle improvisation
+    const melodyNotes = [
+      523.25,
+      587.33,
+      659.25,
+      783.99,
+      880.0, // C5, D5, E5, G5, A5
+      783.99,
+      659.25,
+      587.33,
+      523.25,
+      440.0, // descending
+    ];
+
+    let chordIndex = 0;
+    let beatCount = 0;
+
+    const playChillBeat = () => {
       if (
         !this.bgmPlaying ||
         !this.bgmEnabled ||
@@ -468,35 +493,151 @@ class SoundService {
           ctx.resume();
         }
 
-        // Soft ambient chord
-        const notes = [130.81, 164.81, 196]; // C3, E3, G3
         const now = ctx.currentTime;
+        const chord = chordProgressions[chordIndex];
+        const vol = this.bgmVolume;
 
-        notes.forEach((freq, i) => {
+        // Soft pad background (warm synth)
+        chord.forEach((freq, i) => {
           const osc = ctx.createOscillator();
           const gain = ctx.createGain();
+          const filter = ctx.createBiquadFilter();
 
           osc.type = "sine";
-          osc.connect(gain);
+          filter.type = "lowpass";
+          filter.frequency.value = 800;
+          filter.Q.value = 1;
+
+          osc.connect(filter);
+          filter.connect(gain);
           gain.connect(ctx.destination);
 
-          osc.frequency.setValueAtTime(freq, now);
+          // Slight detune for warmth
+          osc.frequency.setValueAtTime(freq * (1 + (i - 1.5) * 0.002), now);
 
+          // Slow swell
           gain.gain.setValueAtTime(0, now);
-          gain.gain.linearRampToValueAtTime(this.bgmVolume * 0.3, now + 0.5);
-          gain.gain.linearRampToValueAtTime(this.bgmVolume * 0.2, now + 2);
-          gain.gain.linearRampToValueAtTime(0, now + 3);
+          gain.gain.linearRampToValueAtTime(vol * 0.12, now + 0.8);
+          gain.gain.setValueAtTime(vol * 0.12, now + 1.5);
+          gain.gain.linearRampToValueAtTime(0, now + 2.5);
 
-          osc.start(now + i * 0.05);
-          osc.stop(now + 3);
+          osc.start(now);
+          osc.stop(now + 2.5);
         });
+
+        // Gentle arpeggio (every other beat)
+        if (beatCount % 2 === 0) {
+          chord.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.type = "triangle";
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            // Play notes in sequence
+            const noteTime = now + i * 0.2;
+            osc.frequency.setValueAtTime(freq * 2, noteTime); // One octave up
+
+            gain.gain.setValueAtTime(0, noteTime);
+            gain.gain.linearRampToValueAtTime(vol * 0.08, noteTime + 0.05);
+            gain.gain.linearRampToValueAtTime(vol * 0.04, noteTime + 0.3);
+            gain.gain.linearRampToValueAtTime(0, noteTime + 0.8);
+
+            osc.start(noteTime);
+            osc.stop(noteTime + 0.8);
+          });
+        }
+
+        // Soft melody (every 4th beat)
+        if (beatCount % 4 === 0) {
+          const melodyNote =
+            melodyNotes[Math.floor(Math.random() * melodyNotes.length)];
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const filter = ctx.createBiquadFilter();
+
+          osc.type = "sine";
+          filter.type = "lowpass";
+          filter.frequency.value = 1200;
+
+          osc.connect(filter);
+          filter.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.frequency.setValueAtTime(melodyNote, now + 1);
+
+          gain.gain.setValueAtTime(0, now + 1);
+          gain.gain.linearRampToValueAtTime(vol * 0.1, now + 1.1);
+          gain.gain.linearRampToValueAtTime(vol * 0.06, now + 1.5);
+          gain.gain.linearRampToValueAtTime(0, now + 2.2);
+
+          osc.start(now + 1);
+          osc.stop(now + 2.2);
+        }
+
+        // Soft kick drum (subtle)
+        if (beatCount % 2 === 0) {
+          const kickOsc = ctx.createOscillator();
+          const kickGain = ctx.createGain();
+
+          kickOsc.type = "sine";
+          kickOsc.connect(kickGain);
+          kickGain.connect(ctx.destination);
+
+          kickOsc.frequency.setValueAtTime(80, now);
+          kickOsc.frequency.exponentialRampToValueAtTime(40, now + 0.1);
+
+          kickGain.gain.setValueAtTime(vol * 0.15, now);
+          kickGain.gain.linearRampToValueAtTime(0, now + 0.15);
+
+          kickOsc.start(now);
+          kickOsc.stop(now + 0.15);
+        }
+
+        // Hi-hat (very soft)
+        if (beatCount % 1 === 0) {
+          const noiseBuffer = ctx.createBuffer(
+            1,
+            ctx.sampleRate * 0.05,
+            ctx.sampleRate
+          );
+          const noiseData = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < noiseData.length; i++) {
+            noiseData[i] = Math.random() * 2 - 1;
+          }
+
+          const noise = ctx.createBufferSource();
+          const noiseGain = ctx.createGain();
+          const noiseFilter = ctx.createBiquadFilter();
+
+          noise.buffer = noiseBuffer;
+          noiseFilter.type = "highpass";
+          noiseFilter.frequency.value = 8000;
+
+          noise.connect(noiseFilter);
+          noiseFilter.connect(noiseGain);
+          noiseGain.connect(ctx.destination);
+
+          noiseGain.gain.setValueAtTime(vol * 0.03, now + 0.5);
+          noiseGain.gain.linearRampToValueAtTime(0, now + 0.55);
+
+          noise.start(now + 0.5);
+          noise.stop(now + 0.55);
+        }
+
+        // Advance chord every 4 beats
+        beatCount++;
+        if (beatCount % 4 === 0) {
+          chordIndex = (chordIndex + 1) % chordProgressions.length;
+        }
       } catch (e) {
         console.warn("Waiting BGM failed:", e);
       }
     };
 
-    playAmbientNote();
-    this.bgmInterval = setInterval(playAmbientNote, 4000);
+    playChillBeat();
+    this.bgmInterval = setInterval(playChillBeat, 2000); // 30 BPM feel (slow & chill)
   }
 
   // Game BGM - Dragon Quest inspired styles

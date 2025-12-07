@@ -3,9 +3,9 @@
 import { ChatHUD } from "@/src/presentation/components/game/ChatHUD";
 import { GameCanvas } from "@/src/presentation/components/game/GameCanvas";
 import { GameLayout } from "@/src/presentation/components/game/GameLayout";
-import { useSound } from "@/src/presentation/hooks/useSound";
 import { useGameStore } from "@/src/presentation/stores/gameStore";
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
+import { useSound } from "@/src/presentation/stores/soundStore";
 import { useUserStore } from "@/src/presentation/stores/userStore";
 import { Frown, Handshake, RotateCcw, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";

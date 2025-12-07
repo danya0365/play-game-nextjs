@@ -1,6 +1,6 @@
 "use client";
 
-import { GameBgmStyle, useSound } from "@/src/presentation/hooks/useSound";
+import { GameBgmStyle, useSound } from "@/src/presentation/stores/soundStore";
 import {
   AlertTriangle,
   Beer,

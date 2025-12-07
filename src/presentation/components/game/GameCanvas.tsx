@@ -18,7 +18,9 @@ interface GameCanvasProps {
   enableOrbit?: boolean;
   enablePhysics?: boolean;
   cameraPosition?: [number, number, number];
+  mobileCameraPosition?: [number, number, number];
   cameraFov?: number;
+  mobileCameraFov?: number;
   backgroundColor?: string;
   className?: string;
 }
@@ -98,17 +100,36 @@ export function GameCanvas({
   enableOrbit = false,
   enablePhysics = false,
   cameraPosition = [0, 5, 10],
+  mobileCameraPosition,
   cameraFov = 50,
+  mobileCameraFov,
   backgroundColor = "transparent",
   className = "",
 }: GameCanvasProps) {
   const [mounted, setMounted] = useState(false);
   const [key, setKey] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Wait for client-side mounting to avoid hydration mismatch
+  // Detect mobile screen
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Wait for client-side mounting
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Responsive camera settings
+  const finalCameraPosition =
+    isMobile && mobileCameraPosition ? mobileCameraPosition : cameraPosition;
+  const finalCameraFov =
+    isMobile && mobileCameraFov ? mobileCameraFov : cameraFov;
 
   const handleReset = () => {
     setKey((k: number) => k + 1);
@@ -147,21 +168,28 @@ export function GameCanvas({
               });
             }}
           >
-            {/* Camera */}
+            {/* Camera - responsive for mobile */}
             <PerspectiveCamera
               makeDefault
-              position={cameraPosition}
-              fov={cameraFov}
+              position={finalCameraPosition}
+              fov={finalCameraFov}
             />
 
-            {/* Orbit Controls (optional) */}
+            {/* Orbit Controls - touch enabled for mobile */}
             {enableOrbit && (
               <OrbitControls
                 enablePan={false}
                 enableZoom={true}
-                minDistance={3}
-                maxDistance={15}
+                enableRotate={true}
+                minDistance={isMobile ? 6 : 3}
+                maxDistance={isMobile ? 20 : 15}
                 maxPolarAngle={Math.PI / 2.2}
+                touches={{
+                  ONE: 1, // TOUCH.ROTATE
+                  TWO: 2, // TOUCH.DOLLY_PAN
+                }}
+                rotateSpeed={isMobile ? 0.5 : 1}
+                zoomSpeed={isMobile ? 0.5 : 1}
               />
             )}
 

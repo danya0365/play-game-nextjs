@@ -194,10 +194,12 @@ export function TicTacToeView() {
       onRestart={handleRestart}
       showRestart={isHost && gameState.status === "finished"}
     >
-      {/* 3D Game Canvas */}
+      {/* 3D Game Canvas - responsive for mobile */}
       <GameCanvas
         cameraPosition={[0, 8, 8]}
+        mobileCameraPosition={[0, 12, 10]}
         cameraFov={45}
+        mobileCameraFov={55}
         enableOrbit={true}
         backgroundColor="#0f0f1a"
       >
@@ -209,10 +211,10 @@ export function TicTacToeView() {
         />
       </GameCanvas>
 
-      {/* Turn Indicator Overlay */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none">
+      {/* Turn Indicator Overlay - mobile responsive */}
+      <div className="absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-10">
         <div
-          className={`px-6 py-3 rounded-full font-medium shadow-lg ${
+          className={`px-4 md:px-6 py-2 md:py-3 rounded-full font-medium shadow-lg text-sm md:text-base ${
             isMyTurn
               ? "bg-success text-white"
               : "bg-surface border border-border text-foreground"
@@ -226,12 +228,12 @@ export function TicTacToeView() {
         </div>
       </div>
 
-      {/* My Mark Indicator */}
-      <div className="absolute top-4 left-4">
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-surface border border-border">
-          <span className="text-sm text-muted">คุณเป็น:</span>
+      {/* My Mark Indicator - mobile responsive */}
+      <div className="absolute top-2 md:top-4 left-2 md:left-4 z-10">
+        <div className="flex items-center gap-1 md:gap-2 px-2 md:px-3 py-1 md:py-2 rounded-lg bg-surface/90 backdrop-blur-sm border border-border">
+          <span className="text-xs md:text-sm text-muted">คุณเป็น:</span>
           <span
-            className={`text-xl font-bold ${
+            className={`text-lg md:text-xl font-bold ${
               myMark === "X" ? "text-error" : "text-info"
             }`}
           >

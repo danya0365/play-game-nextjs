@@ -321,13 +321,13 @@ export const GAMES: GameMeta[] = [
   {
     slug: "connect-four",
     name: "Connect 4",
-    nameTh: "คอนเนคโฟร์",
+    nameTh: "เรียง 4",
     category: "board_games",
     subcategory: "strategy",
     minPlayers: 2,
     maxPlayers: 2,
     icon: "🔴",
-    status: "coming_soon",
+    status: "available",
   },
   {
     slug: "tic-tac-toe",

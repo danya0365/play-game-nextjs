@@ -2,17 +2,17 @@
 
 import { GameLayout } from "@/src/presentation/components/game/GameLayout";
 import { GameViewBase } from "@/src/presentation/components/game/GameViewBase";
-import { useTicTacToeGame } from "@/src/presentation/hooks/useTicTacToeGame";
-import { TicTacToe2D } from "./TicTacToe2D";
-import { TicTacToe3D } from "./TicTacToe3D";
+import { useConnectFourGame } from "@/src/presentation/hooks/useConnectFourGame";
+import { ConnectFour2D } from "./ConnectFour2D";
+import { ConnectFour3D } from "./ConnectFour3D";
 
 /**
- * Tic Tac Toe Game View
+ * Connect Four Game View
  * Uses GameViewBase for common UI, only provides game-specific rendering
  */
-export function TicTacToeView() {
+export function ConnectFourView() {
   // Game logic hook
-  const game = useTicTacToeGame();
+  const game = useConnectFourGame();
 
   const {
     room,
@@ -21,13 +21,14 @@ export function TicTacToeView() {
     isPlaying,
     isFinished,
     isMyTurn,
-    myMark,
+    myColor,
     currentTurnPlayer,
     showResult,
     playerScores,
     board,
-    winningLine,
-    handleCellClick,
+    winningCells,
+    lastMove,
+    handleColumnClick,
     handleRestart,
     handleLeave,
     handleCloseResult,
@@ -38,7 +39,7 @@ export function TicTacToeView() {
   // Loading state
   if (!room || !gameState) {
     return (
-      <GameLayout gameName="โอเอ็กซ์" onLeave={handleLeave}>
+      <GameLayout gameName="เรียง 4" onLeave={handleLeave}>
         <div className="h-full flex items-center justify-center">
           <p className="text-muted">กำลังโหลดเกม...</p>
         </div>
@@ -49,7 +50,7 @@ export function TicTacToeView() {
   return (
     <GameViewBase
       // Game info
-      gameName="โอเอ็กซ์"
+      gameName="เรียง 4"
       roomCode={room.code}
       // Players
       players={playerScores}
@@ -61,9 +62,9 @@ export function TicTacToeView() {
       isFinished={isFinished}
       showResult={showResult}
       turnNumber={gameState.turnNumber}
-      // Player symbol
-      mySymbol={myMark}
-      symbolColor={myMark === "X" ? "error" : "info"}
+      // Player symbol/role
+      mySymbol={myColor === "red" ? "🔴" : "🟡"}
+      symbolColor={myColor === "red" ? "error" : "warning"}
       // Result
       result={getResultInfo()}
       // Actions
@@ -71,28 +72,30 @@ export function TicTacToeView() {
       onLeave={handleLeave}
       onCloseResult={handleCloseResult}
       onShowResult={handleShowResult}
-      // Camera settings
-      cameraPosition={[0, 8, 8]}
-      mobileCameraPosition={[0, 12, 10]}
+      // Camera settings - zoomed out for mobile
+      cameraPosition={[0, 2, 10]}
+      mobileCameraPosition={[0, 0.5, 7]}
       cameraFov={45}
       mobileCameraFov={55}
-      backgroundColor="#0f0f1a"
+      backgroundColor="#0f172a"
       // Render 2D board
       render2D={
-        <TicTacToe2D
+        <ConnectFour2D
           board={board}
-          winningLine={winningLine}
+          winningCells={winningCells}
+          lastMove={lastMove}
           isMyTurn={isMyTurn && isPlaying}
-          onCellClick={handleCellClick}
+          onColumnClick={handleColumnClick}
         />
       }
       // Render 3D board
       render3D={
-        <TicTacToe3D
+        <ConnectFour3D
           board={board}
-          winningLine={winningLine}
+          winningCells={winningCells}
+          lastMove={lastMove}
           isMyTurn={isMyTurn && isPlaying}
-          onCellClick={handleCellClick}
+          onColumnClick={handleColumnClick}
         />
       }
     />

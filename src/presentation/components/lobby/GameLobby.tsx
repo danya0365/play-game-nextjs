@@ -74,12 +74,12 @@ export function GameLobby({ game }: GameLobbyProps) {
       subtitle={`${game.minPlayers}-${game.maxPlayers} ผู้เล่น`}
       backHref="/games"
     >
-      <div className="h-svh flex flex-col items-center justify-center p-4">
+      <div className="h-full flex flex-col items-center justify-center px-4 py-6 sm:p-6">
         <div className="w-full max-w-md">
           {/* Game Icon */}
-          <div className="text-center mb-8">
-            <span className="text-7xl">{game.icon}</span>
-            <h2 className="text-2xl font-bold mt-4">
+          <div className="text-center mb-6 sm:mb-8">
+            <span className="text-5xl sm:text-7xl">{game.icon}</span>
+            <h2 className="text-xl sm:text-2xl font-bold mt-3 sm:mt-4">
               {game.nameTh || game.name}
             </h2>
             <p className="text-muted mt-1">
@@ -213,7 +213,7 @@ export function GameLobby({ game }: GameLobbyProps) {
 
           {/* User Info */}
           {user && (
-            <div className="mt-8 flex items-center justify-center gap-2 text-sm text-muted">
+            <div className="mt-6 sm:mt-8 flex items-center justify-center gap-2 text-sm text-muted">
               <span>{user.avatar}</span>
               <span>เล่นในนาม</span>
               <span className="font-medium text-foreground">

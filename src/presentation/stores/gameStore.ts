@@ -1,6 +1,14 @@
 "use client";
 
 import type {
+  ConnectFourAction,
+  ConnectFourState,
+} from "@/src/domain/types/connectFourState";
+import {
+  applyConnectFourAction,
+  createConnectFourState,
+} from "@/src/domain/types/connectFourState";
+import type {
   GamePlayer,
   TicTacToeAction,
   TicTacToeState,
@@ -16,12 +24,15 @@ import { useAIStore } from "./aiStore";
 import { useRoomStore } from "./roomStore";
 import { useUserStore } from "./userStore";
 
+// Union type for all game states
+type AnyGameState = TicTacToeState | ConnectFourState;
+
 /**
  * Game Store State
  */
 interface GameState {
   // Game state
-  gameState: TicTacToeState | null;
+  gameState: AnyGameState | null;
   isPlaying: boolean;
 
   // UI state
@@ -39,15 +50,18 @@ interface GameActions {
   resetGame: () => void;
   clearGame: () => void; // Reset to initial state
 
-  // Actions
+  // Actions - TicTacToe
   placeMark: (cellIndex: number, forPlayerId?: string) => void;
   selectCell: (cellIndex: number | null) => void;
+
+  // Actions - Connect Four
+  dropPiece: (column: number, forPlayerId?: string) => void;
 
   // P2P handlers
   handleGameMessage: (message: P2PMessage) => void;
 
   // State updates
-  setGameState: (state: TicTacToeState) => void;
+  setGameState: (state: AnyGameState) => void;
   setShowResult: (show: boolean) => void;
 }
 
@@ -67,7 +81,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   ...initialState,
 
   /**
-   * Initialize game
+   * Initialize game based on room.gameSlug
    */
   initGame: () => {
     const room = useRoomStore.getState().room;
@@ -99,8 +113,18 @@ export const useGameStore = create<GameStore>((set, get) => ({
           }
         : null;
 
-    // Create initial state with AI player
-    const state = createTicTacToeState(room.id, gamePlayers, aiGamePlayer);
+    // Create initial state based on game type
+    let state: AnyGameState;
+
+    switch (room.gameSlug) {
+      case "connect-four":
+        state = createConnectFourState(room.id, gamePlayers, aiGamePlayer);
+        break;
+      case "tic-tac-toe":
+      default:
+        state = createTicTacToeState(room.id, gamePlayers, aiGamePlayer);
+        break;
+    }
 
     // Mark current turn player as active
     state.players = state.players.map((p) => ({
@@ -138,8 +162,48 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const room = useRoomStore.getState().room;
     if (!room) return;
 
-    // Create new state with same players
-    const newState = createTicTacToeState(room.id, gameState.players);
+    // Get AI state
+    const { enabled: isAIEnabled, aiPlayer } = useAIStore.getState();
+
+    // Create AI game player if enabled
+    const aiGamePlayer =
+      isAIEnabled && aiPlayer
+        ? {
+            odId: aiPlayer.id,
+            nickname: aiPlayer.nickname,
+            avatar: aiPlayer.avatar,
+            score: 0,
+            isActive: false,
+            isAI: true,
+          }
+        : null;
+
+    // Create new state based on game type
+    let newState: AnyGameState;
+
+    switch (room.gameSlug) {
+      case "connect-four":
+        newState = createConnectFourState(
+          room.id,
+          gameState.players.filter((p) => !p.isAI),
+          aiGamePlayer
+        );
+        break;
+      case "tic-tac-toe":
+      default:
+        newState = createTicTacToeState(
+          room.id,
+          gameState.players.filter((p) => !p.isAI),
+          aiGamePlayer
+        );
+        break;
+    }
+
+    // Mark current turn player as active
+    newState.players = newState.players.map((p) => ({
+      ...p,
+      isActive: p.odId === newState.currentTurn,
+    }));
 
     set({ gameState: newState, isPlaying: true, showResult: false });
 
@@ -159,6 +223,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { gameState, isPlaying } = get();
     if (!gameState || !isPlaying) return;
 
+    // Type guard for TicTacToe
+    if (!("playerX" in gameState) || !("playerO" in gameState)) return;
+
+    const ttState = gameState as TicTacToeState;
     const user = useUserStore.getState().user;
 
     // Determine which player is making the move
@@ -166,16 +234,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!playerId) return;
 
     // Check if it's this player's turn
-    if (gameState.currentTurn !== playerId) {
+    if (ttState.currentTurn !== playerId) {
       console.log("[placeMark] Not this player's turn:", {
-        currentTurn: gameState.currentTurn,
+        currentTurn: ttState.currentTurn,
         playerId,
       });
       return;
     }
 
     // Check if cell is empty
-    if (gameState.board[cellIndex] !== null) return;
+    if (ttState.board[cellIndex] !== null) return;
 
     // Create action
     const action: TicTacToeAction = {
@@ -186,7 +254,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
 
     // Apply action locally
-    const newState = applyTicTacToeAction(gameState, action);
+    const newState = applyTicTacToeAction(ttState, action);
 
     // Update active player
     newState.players = newState.players.map((p) => ({
@@ -213,6 +281,65 @@ export const useGameStore = create<GameStore>((set, get) => ({
    */
   selectCell: (cellIndex: number | null) => {
     set({ selectedCell: cellIndex });
+  },
+
+  /**
+   * Drop piece in column (Connect Four)
+   * @param column - Column index (0-6)
+   * @param forPlayerId - Optional player ID (for AI moves)
+   */
+  dropPiece: (column: number, forPlayerId?: string) => {
+    const { gameState, isPlaying } = get();
+    if (!gameState || !isPlaying) return;
+
+    // Type guard for Connect Four
+    if (!("player1" in gameState) || !("player2" in gameState)) return;
+
+    const cfState = gameState as ConnectFourState;
+    const user = useUserStore.getState().user;
+
+    // Determine which player is making the move
+    const playerId = forPlayerId ?? user?.id;
+    if (!playerId) return;
+
+    // Check if it's this player's turn
+    if (cfState.currentTurn !== playerId) {
+      console.log("[dropPiece] Not this player's turn:", {
+        currentTurn: cfState.currentTurn,
+        playerId,
+      });
+      return;
+    }
+
+    // Create action
+    const action: ConnectFourAction = {
+      type: "drop_piece",
+      playerId,
+      timestamp: Date.now(),
+      data: { column },
+    };
+
+    // Apply action locally
+    const newState = applyConnectFourAction(cfState, action);
+
+    // Update active player
+    newState.players = newState.players.map((p) => ({
+      ...p,
+      isActive: p.odId === newState.currentTurn,
+    }));
+
+    set({ gameState: newState, selectedCell: null });
+
+    // Check if game ended
+    if (newState.status === "finished") {
+      set({ isPlaying: false, showResult: true });
+    }
+
+    // Broadcast action
+    const room = useRoomStore.getState().room;
+    if (room) {
+      peerManager.broadcast("game_action", { action, newState });
+    }
   },
 
   /**
@@ -251,7 +378,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   /**
    * Set game state directly
    */
-  setGameState: (state: TicTacToeState) => {
+  setGameState: (state: AnyGameState) => {
     set({ gameState: state });
   },
 

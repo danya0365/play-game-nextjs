@@ -30,7 +30,7 @@ export function LobbyLayout({
   return (
     <div className="fixed inset-0 flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="shrink-0 h-14 border-b border-border bg-surface flex items-center px-4 gap-4">
+      <header className="shrink-0 h-12 sm:h-14 border-b border-border bg-surface flex items-center px-3 sm:px-4 gap-2 sm:gap-4">
         {/* Back Button */}
         {showBack &&
           (onBack ? (

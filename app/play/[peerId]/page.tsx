@@ -1,4 +1,4 @@
-import { TicTacToeView } from "@/src/presentation/components/games/tictactoe";
+import { GamePlayView } from "@/src/presentation/components/game/GamePlayView";
 import type { Metadata } from "next";
 
 interface PlayPageProps {
@@ -12,15 +12,12 @@ export const metadata: Metadata = {
 
 /**
  * Game Play Page
- * Currently only supports Tic Tac Toe
- * Will be extended to support multiple games based on room.gameSlug
+ * Dynamically renders the correct game based on room.gameSlug
  */
 export default async function PlayPage({ params }: PlayPageProps) {
   // peerId is used to maintain URL consistency with room
   // The actual game state comes from the room store
   await params; // Await params to satisfy Next.js
 
-  // For now, just render TicTacToe
-  // In the future, this will check room.gameSlug and render appropriate game
-  return <TicTacToeView />;
+  return <GamePlayView />;
 }

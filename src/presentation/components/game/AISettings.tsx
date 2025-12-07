@@ -15,7 +15,7 @@ export function AISettings() {
 
   return (
     <div className="bg-surface border border-border rounded-xl p-4">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Bot className="w-5 h-5 text-info" />
           <span className="font-medium">เล่นกับ AI</span>

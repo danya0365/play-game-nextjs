@@ -189,10 +189,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
    * Handle incoming game messages
    */
   handleGameMessage: (message: P2PMessage) => {
+    console.log("[GameStore] Received message:", message.type);
     switch (message.type) {
       case "game_state": {
         const { state } = message.payload as { state: TicTacToeState };
-        set({ gameState: state, isPlaying: state.status === "playing" });
+        console.log("[GameStore] Received game_state, status:", state.status);
+        set({
+          gameState: state,
+          isPlaying: state.status === "playing",
+          showResult: state.status === "finished",
+        });
         break;
       }
       case "game_action": {

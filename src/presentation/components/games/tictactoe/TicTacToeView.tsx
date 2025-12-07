@@ -1,5 +1,6 @@
 "use client";
 
+import { ChatHUD } from "@/src/presentation/components/game/ChatHUD";
 import { GameCanvas } from "@/src/presentation/components/game/GameCanvas";
 import { GameLayout } from "@/src/presentation/components/game/GameLayout";
 import { useGameStore } from "@/src/presentation/stores/gameStore";
@@ -182,6 +183,9 @@ export function TicTacToeView() {
           </span>
         </div>
       </div>
+
+      {/* Chat HUD */}
+      <ChatHUD />
 
       {/* Result Modal */}
       {showResult && gameState.status === "finished" && (

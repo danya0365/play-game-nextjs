@@ -30,7 +30,8 @@ interface UseAIPlayerOptions<TGameState, TMove> {
  */
 export function useAIPlayer<TGameState, TMove>({
   gameState,
-  isAITurn: _isAITurnProp, // Keep for backward compat but calculate internally
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  isAITurn: _isAITurnProp, // Kept for backward compat, calculated internally
   isPlaying,
   calculateAIMove,
   executeMove,
@@ -64,28 +65,19 @@ export function useAIPlayer<TGameState, TMove>({
     }, moveDelay);
   }, [gameState, enabled, difficulty, calculateAIMove, executeMove, moveDelay]);
 
-  // Watch for AI's turn - use currentTurn as key dependency
+  // Watch for AI's turn
   useEffect(() => {
-    console.log("[AI] Turn check:", {
-      enabled,
-      isPlaying,
-      currentTurn,
-      aiPlayerId: aiPlayer?.id,
-      isAITurn,
-      isProcessing: isProcessing.current,
-    });
-
     // Skip if not AI's turn or already processing
-    if (!enabled || !isPlaying || !gameState || !isAITurn) {
+    if (
+      !enabled ||
+      !isPlaying ||
+      !gameState ||
+      !isAITurn ||
+      isProcessing.current
+    ) {
       return;
     }
 
-    if (isProcessing.current) {
-      console.log("[AI] Skip - already processing");
-      return;
-    }
-
-    console.log("[AI] Making move...");
     makeAIMove();
 
     return () => {

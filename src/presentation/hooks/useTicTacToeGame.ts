@@ -37,15 +37,6 @@ export function useTicTacToeGame() {
     aiPlayer !== null &&
     gameState?.currentTurn === aiPlayer?.id;
 
-  // Debug AI turn
-  console.log("[TicTacToe AI] Turn check:", {
-    isAIEnabled,
-    isPlaying,
-    aiPlayerId: aiPlayer?.id,
-    currentTurn: gameState?.currentTurn,
-    isAITurn,
-  });
-
   // AI Player hook
   const { isAITurn: isAIMoving } = useAIPlayer<TicTacToeState, number>({
     gameState: gameState as TicTacToeState | null,
@@ -54,9 +45,8 @@ export function useTicTacToeGame() {
     calculateAIMove: calculateTicTacToeAIMove,
     executeMove: (move: number) => {
       if (move >= 0 && aiPlayer) {
-        console.log("[AI] Executing move:", move, "for player:", aiPlayer.id);
         playPlaceMark();
-        placeMark(move, aiPlayer.id); // Pass AI player ID
+        placeMark(move, aiPlayer.id);
       }
     },
     moveDelay: 600,

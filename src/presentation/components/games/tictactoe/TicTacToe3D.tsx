@@ -98,8 +98,8 @@ function Mark({
   if (type === "X") {
     return (
       <group ref={groupRef} position={position} scale={scale}>
-        {/* X shape using two crossed boxes */}
-        <mesh rotation={[0, 0, Math.PI / 4]} castShadow>
+        {/* X shape using two crossed boxes - rotated to stand upright */}
+        <mesh rotation={[Math.PI / 2, 0, Math.PI / 4]} castShadow>
           <boxGeometry args={[0.2, 1.2, 0.2]} />
           <meshStandardMaterial
             color={color}
@@ -109,7 +109,7 @@ function Mark({
             roughness={0.3}
           />
         </mesh>
-        <mesh rotation={[0, 0, -Math.PI / 4]} castShadow>
+        <mesh rotation={[Math.PI / 2, 0, -Math.PI / 4]} castShadow>
           <boxGeometry args={[0.2, 1.2, 0.2]} />
           <meshStandardMaterial
             color={color}

@@ -187,6 +187,49 @@ export function TicTacToeView() {
       {/* Chat HUD */}
       <ChatHUD />
 
+      {/* Waiting for Host Overlay - shown when game finished, modal closed, and not host */}
+      {!showResult && gameState.status === "finished" && !isHost && (
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-40">
+          <div className="bg-surface border border-border rounded-2xl p-6 max-w-xs w-full mx-4 text-center">
+            <div className="flex justify-center mb-3">
+              <div className="w-12 h-12 rounded-full bg-info/10 flex items-center justify-center">
+                <RotateCcw className="w-6 h-6 text-info animate-spin" />
+              </div>
+            </div>
+            <h3 className="font-semibold mb-1">รอ Host</h3>
+            <p className="text-sm text-muted mb-4">รอ Host เริ่มเกมใหม่...</p>
+            <button
+              onClick={() => setShowResult(true)}
+              className="text-sm text-info hover:underline"
+            >
+              ดูผลลัพธ์อีกครั้ง
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Host Action Bar - shown when game finished, modal closed, and is host */}
+      {!showResult && gameState.status === "finished" && isHost && (
+        <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-40">
+          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-surface border border-border shadow-lg">
+            <span className="text-sm text-muted">เกมจบแล้ว</span>
+            <button
+              onClick={handleRestart}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-info text-white font-medium hover:bg-info-dark transition-colors"
+            >
+              <RotateCcw className="w-4 h-4" />
+              เล่นใหม่
+            </button>
+            <button
+              onClick={() => setShowResult(true)}
+              className="px-4 py-2 rounded-lg border border-border hover:bg-muted-light dark:hover:bg-muted-dark transition-colors"
+            >
+              ดูผล
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Result Modal */}
       {showResult && gameState.status === "finished" && (
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">

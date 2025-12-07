@@ -118,12 +118,12 @@ export function ChatHUD() {
   };
 
   return (
-    <div className="fixed bottom-20 right-4 z-40 lg:bottom-4">
+    <div className="fixed bottom-20 right-4 z-40 lg:bottom-4 flex flex-col items-end gap-2">
       {/* Chat Panel */}
       {isOpen && (
-        <div className="mb-2 w-80 max-w-[calc(100vw-2rem)] bg-surface border border-border rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
+        <div className="w-80 max-w-[calc(100vw-2rem)] bg-background dark:bg-surface border border-border rounded-xl shadow-xl overflow-hidden animate-in slide-in-from-bottom-2 fade-in duration-200">
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted-light dark:bg-muted-dark">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-surface dark:bg-muted-dark">
             <div className="flex items-center gap-2">
               <MessageCircle className="w-4 h-4 text-info" />
               <span className="font-medium text-sm">แชท</span>
@@ -138,7 +138,7 @@ export function ChatHUD() {
           </div>
 
           {/* Messages */}
-          <div className="h-64 overflow-y-auto p-3 space-y-3 bg-background">
+          <div className="h-64 overflow-y-auto p-3 space-y-3 bg-background dark:bg-background">
             {messages.length === 0 ? (
               <div className="h-full flex items-center justify-center text-muted text-sm">
                 ยังไม่มีข้อความ
@@ -183,7 +183,7 @@ export function ChatHUD() {
           </div>
 
           {/* Input */}
-          <div className="p-3 border-t border-border bg-surface">
+          <div className="p-3 border-t border-border bg-surface dark:bg-surface">
             <div className="flex gap-2">
               <input
                 ref={inputRef}

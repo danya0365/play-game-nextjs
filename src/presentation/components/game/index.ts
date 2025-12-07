@@ -1,9 +1,11 @@
 export { AIIndicator, AISettings } from "./AISettings";
 export { ChatHUD } from "./ChatHUD";
+export { ConnectionStatus, ReconnectingOverlay } from "./ConnectionStatus";
 export { GameBoard, GameCanvas } from "./GameCanvas";
 export { GameLayout } from "./GameLayout";
 export {
   GameResultModal,
+  GameStatus,
   HostActionBar,
   PlayerIndicator,
   RenderModeToggle,

@@ -23,7 +23,7 @@ export function AISettings() {
         <button
           onClick={() => setEnabled(!enabled)}
           className={`relative w-12 h-6 rounded-full transition-colors ${
-            enabled ? "bg-info" : "bg-muted-light dark:bg-muted-dark"
+            enabled ? "bg-info" : "bg-muted"
           }`}
         >
           <span

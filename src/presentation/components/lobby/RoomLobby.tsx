@@ -16,7 +16,12 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useConnectionStatus } from "../../hooks/useConnectionStatus";
 import { AISettings } from "../game/AISettings";
+import {
+  ConnectionStatus,
+  ReconnectingOverlay,
+} from "../game/ConnectionStatus";
 import { LobbyLayout } from "./LobbyLayout";
 import { EmptyPlayerSlot, PlayerCard } from "./PlayerCard";
 
@@ -55,6 +60,9 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
 
   // AI state - must be at top level before any returns
   const { enabled: isAIEnabled, aiPlayer } = useAIStore();
+
+  // Connection status (ping-pong)
+  const { getPlayerConnectionStatus } = useConnectionStatus();
 
   // Start waiting BGM when entering room
   useEffect(() => {
@@ -218,186 +226,201 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   }
 
   return (
-    <LobbyLayout
-      title={room.gameName}
-      subtitle={`รหัสห้อง: ${room.code}`}
-      onBack={handleLeave}
-    >
-      <div className="h-full flex flex-col lg:flex-row">
-        {/* Left Panel - Players */}
-        <div className="flex-1 flex flex-col p-4 overflow-hidden">
-          {/* Players Header */}
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-muted" />
-              <span className="font-medium">
-                ผู้เล่น ({effectivePlayerCount}/{room.config.maxPlayers})
-              </span>
+    <>
+      <LobbyLayout
+        title={room.gameName}
+        subtitle={`รหัสห้อง: ${room.code}`}
+        onBack={handleLeave}
+      >
+        <div className="h-full flex flex-col lg:flex-row">
+          {/* Left Panel - Players */}
+          <div className="flex-1 flex flex-col p-4 overflow-hidden">
+            {/* Players Header */}
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-muted" />
+                <span className="font-medium">
+                  ผู้เล่น ({effectivePlayerCount}/{room.config.maxPlayers})
+                </span>
+                {/* Connection Status (inline for lobby) */}
+                <ConnectionStatus showDetails size="sm" inline />
+              </div>
+              {isHost && (
+                <button className="p-2 rounded-lg hover:bg-muted-light dark:hover:bg-muted-dark transition-colors">
+                  <Settings className="w-5 h-5 text-muted" />
+                </button>
+              )}
             </div>
-            {isHost && (
-              <button className="p-2 rounded-lg hover:bg-muted-light dark:hover:bg-muted-dark transition-colors">
-                <Settings className="w-5 h-5 text-muted" />
-              </button>
-            )}
-          </div>
 
-          {/* Players List */}
-          <div className="flex-1 overflow-y-auto space-y-2">
-            {room.players.map((player) => (
-              <PlayerCard
-                key={player.odId}
-                player={player}
-                isCurrentUser={player.odId === user?.id}
-                canKick={isHost && player.odId !== user?.id}
-                onKick={() => handleKick(player.odId)}
-              />
-            ))}
+            {/* Players List */}
+            <div className="flex-1 overflow-y-auto space-y-2">
+              {room.players.map((player) => {
+                const connStatus = getPlayerConnectionStatus(player.peerId);
+                return (
+                  <PlayerCard
+                    key={player.odId}
+                    player={player}
+                    isCurrentUser={player.odId === user?.id}
+                    canKick={isHost && player.odId !== user?.id}
+                    onKick={() => handleKick(player.odId)}
+                    connectionQuality={connStatus?.quality}
+                    latency={connStatus?.latency}
+                  />
+                );
+              })}
 
-            {/* AI Player Card */}
-            {isAIEnabled && aiPlayer && (
-              <div className="flex items-center gap-3 p-3 rounded-xl bg-info/10 border-2 border-info/30">
-                <span className="text-3xl">{aiPlayer.avatar}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium truncate">
-                      {aiPlayer.nickname}
-                    </span>
-                    <span className="shrink-0 px-2 py-0.5 rounded-full bg-info/20 text-info text-xs">
-                      AI
-                    </span>
+              {/* AI Player Card */}
+              {isAIEnabled && aiPlayer && (
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-info/10 border-2 border-info/30">
+                  <span className="text-3xl">{aiPlayer.avatar}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium truncate">
+                        {aiPlayer.nickname}
+                      </span>
+                      <span className="shrink-0 px-2 py-0.5 rounded-full bg-info/20 text-info text-xs">
+                        AI
+                      </span>
+                    </div>
+                    <span className="text-xs text-muted">พร้อมเล่นแล้ว</span>
                   </div>
-                  <span className="text-xs text-muted">พร้อมเล่นแล้ว</span>
+                  <Check className="w-5 h-5 text-success" />
                 </div>
-                <Check className="w-5 h-5 text-success" />
+              )}
+
+              {/* Empty Slots */}
+              {Array.from({
+                length: Math.max(
+                  0,
+                  room.config.maxPlayers -
+                    room.players.length -
+                    (isAIEnabled ? 1 : 0)
+                ),
+              }).map((_, i) => (
+                <EmptyPlayerSlot
+                  key={`empty-${i}`}
+                  index={room.players.length + (isAIEnabled ? 1 : 0) + i}
+                />
+              ))}
+            </div>
+
+            {/* Status Messages */}
+            {!hasEnoughPlayers && !isAIEnabled && (
+              <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning text-sm text-center">
+                ต้องมีผู้เล่นอย่างน้อย {room.config.minPlayers}{" "}
+                คนถึงจะเริ่มเกมได้
               </div>
             )}
-
-            {/* Empty Slots */}
-            {Array.from({
-              length: Math.max(
-                0,
-                room.config.maxPlayers -
-                  room.players.length -
-                  (isAIEnabled ? 1 : 0)
-              ),
-            }).map((_, i) => (
-              <EmptyPlayerSlot
-                key={`empty-${i}`}
-                index={room.players.length + (isAIEnabled ? 1 : 0) + i}
-              />
-            ))}
+            {hasEnoughPlayers && !allPlayersReady && !isAIEnabled && (
+              <div className="mt-4 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-sm text-center">
+                รอผู้เล่นทุกคนกดพร้อม
+              </div>
+            )}
+            {isAIEnabled && hasEnoughPlayers && (
+              <div className="mt-4 p-3 rounded-lg bg-success/10 border border-success/30 text-success text-sm text-center">
+                พร้อมเล่นกับ AI แล้ว! กดเริ่มเกมได้เลย
+              </div>
+            )}
           </div>
 
-          {/* Status Messages */}
-          {!hasEnoughPlayers && !isAIEnabled && (
-            <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning text-sm text-center">
-              ต้องมีผู้เล่นอย่างน้อย {room.config.minPlayers} คนถึงจะเริ่มเกมได้
-            </div>
-          )}
-          {hasEnoughPlayers && !allPlayersReady && !isAIEnabled && (
-            <div className="mt-4 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-sm text-center">
-              รอผู้เล่นทุกคนกดพร้อม
-            </div>
-          )}
-          {isAIEnabled && hasEnoughPlayers && (
-            <div className="mt-4 p-3 rounded-lg bg-success/10 border border-success/30 text-success text-sm text-center">
-              พร้อมเล่นกับ AI แล้ว! กดเริ่มเกมได้เลย
-            </div>
-          )}
-        </div>
+          {/* Right Panel - Actions */}
+          <div className="shrink-0 lg:w-80 p-4 border-t lg:border-t-0 lg:border-l border-border bg-surface">
+            <div className="h-full flex flex-col gap-4">
+              {/* Invite Section */}
+              <div className="p-4 rounded-xl bg-background border border-border">
+                <h3 className="font-semibold mb-3">เชิญเพื่อน</h3>
 
-        {/* Right Panel - Actions */}
-        <div className="shrink-0 lg:w-80 p-4 border-t lg:border-t-0 lg:border-l border-border bg-surface">
-          <div className="h-full flex flex-col gap-4">
-            {/* Invite Section */}
-            <div className="p-4 rounded-xl bg-background border border-border">
-              <h3 className="font-semibold mb-3">เชิญเพื่อน</h3>
+                {/* Room Code */}
+                <div className="mb-3">
+                  <label className="text-xs text-muted">
+                    รหัสห้อง (Peer ID)
+                  </label>
+                  <div className="flex items-center gap-2 mt-1">
+                    <code className="flex-1 px-3 py-2 rounded-lg bg-muted-light text-sm font-mono truncate">
+                      {hostPeerId}
+                    </code>
+                    <button
+                      onClick={handleCopyLink}
+                      className="shrink-0 p-2 rounded-lg bg-info/10 text-info hover:bg-info/20 transition-colors"
+                      title="คัดลอก"
+                    >
+                      {copied ? (
+                        <Check className="w-5 h-5" />
+                      ) : (
+                        <Copy className="w-5 h-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
 
-              {/* Room Code */}
-              <div className="mb-3">
-                <label className="text-xs text-muted">รหัสห้อง (Peer ID)</label>
-                <div className="flex items-center gap-2 mt-1">
-                  <code className="flex-1 px-3 py-2 rounded-lg bg-muted-light dark:bg-muted-dark text-sm font-mono truncate">
-                    {hostPeerId}
-                  </code>
+                {/* Share Button */}
+                <button
+                  onClick={handleShare}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:border-info/50 transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>แชร์ลิงก์</span>
+                </button>
+              </div>
+
+              {/* AI Settings - Host Only */}
+              {isHost && <AISettings />}
+
+              {/* Spacer */}
+              <div className="flex-1" />
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                {/* Ready Button (non-host) */}
+                {!isHost && currentPlayer && (
                   <button
-                    onClick={handleCopyLink}
-                    className="shrink-0 p-2 rounded-lg bg-info/10 text-info hover:bg-info/20 transition-colors"
-                    title="คัดลอก"
+                    onClick={handleReady}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-colors ${
+                      currentPlayer.isReady
+                        ? "bg-success/10 text-success border border-success/30"
+                        : "bg-info text-white hover:bg-info-dark"
+                    }`}
                   >
-                    {copied ? (
-                      <Check className="w-5 h-5" />
+                    {currentPlayer.isReady ? (
+                      <>
+                        <Check className="w-5 h-5" />
+                        <span>พร้อมแล้ว</span>
+                      </>
                     ) : (
-                      <Copy className="w-5 h-5" />
+                      <span>กดพร้อม</span>
                     )}
                   </button>
-                </div>
+                )}
+
+                {/* Start Button (host) */}
+                {isHost && (
+                  <button
+                    onClick={handleStart}
+                    disabled={!canStart}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-success text-white font-semibold hover:bg-success-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    <Play className="w-5 h-5" />
+                    <span>เริ่มเกม</span>
+                  </button>
+                )}
+
+                {/* Leave Button */}
+                <button
+                  onClick={handleLeave}
+                  disabled={isLeaving}
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-error hover:bg-error/10 transition-colors"
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>{isHost ? "ปิดห้อง" : "ออกจากห้อง"}</span>
+                </button>
               </div>
-
-              {/* Share Button */}
-              <button
-                onClick={handleShare}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg border border-border hover:border-info/50 transition-colors"
-              >
-                <Share2 className="w-4 h-4" />
-                <span>แชร์ลิงก์</span>
-              </button>
-            </div>
-
-            {/* AI Settings - Host Only */}
-            {isHost && <AISettings />}
-
-            {/* Spacer */}
-            <div className="flex-1" />
-
-            {/* Action Buttons */}
-            <div className="space-y-2">
-              {/* Ready Button (non-host) */}
-              {!isHost && currentPlayer && (
-                <button
-                  onClick={handleReady}
-                  className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-semibold transition-colors ${
-                    currentPlayer.isReady
-                      ? "bg-success/10 text-success border border-success/30"
-                      : "bg-info text-white hover:bg-info-dark"
-                  }`}
-                >
-                  {currentPlayer.isReady ? (
-                    <>
-                      <Check className="w-5 h-5" />
-                      <span>พร้อมแล้ว</span>
-                    </>
-                  ) : (
-                    <span>กดพร้อม</span>
-                  )}
-                </button>
-              )}
-
-              {/* Start Button (host) */}
-              {isHost && (
-                <button
-                  onClick={handleStart}
-                  disabled={!canStart}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-success text-white font-semibold hover:bg-success-dark disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  <Play className="w-5 h-5" />
-                  <span>เริ่มเกม</span>
-                </button>
-              )}
-
-              {/* Leave Button */}
-              <button
-                onClick={handleLeave}
-                disabled={isLeaving}
-                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-error hover:bg-error/10 transition-colors"
-              >
-                <LogOut className="w-5 h-5" />
-                <span>{isHost ? "ปิดห้อง" : "ออกจากห้อง"}</span>
-              </button>
             </div>
           </div>
         </div>
-      </div>
-    </LobbyLayout>
+      </LobbyLayout>
+
+      {/* Reconnecting Overlay for connection loss */}
+      <ReconnectingOverlay />
+    </>
   );
 }

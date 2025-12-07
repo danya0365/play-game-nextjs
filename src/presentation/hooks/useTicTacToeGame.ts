@@ -37,6 +37,11 @@ export function useTicTacToeGame() {
     aiPlayer !== null &&
     gameState?.currentTurn === aiPlayer?.id;
 
+  // Get fresh state from store (avoids stale closure)
+  const getLatestState = useCallback(() => {
+    return useGameStore.getState().gameState as TicTacToeState | null;
+  }, []);
+
   // AI Player hook
   const { isAITurn: isAIMoving } = useAIPlayer<TicTacToeState, number>({
     gameState: gameState as TicTacToeState | null,
@@ -50,6 +55,7 @@ export function useTicTacToeGame() {
       }
     },
     moveDelay: 600,
+    getLatestState,
   });
 
   // TicTacToe-specific: cell click handler

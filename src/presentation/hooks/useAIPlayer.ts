@@ -22,6 +22,9 @@ interface UseAIPlayerOptions<TGameState, TMove> {
 
   /** Delay before AI makes move (ms) - makes it feel more natural */
   moveDelay?: number;
+
+  /** Get fresh game state (to avoid stale closure) */
+  getLatestState?: () => TGameState | null;
 }
 
 /**
@@ -36,10 +39,23 @@ export function useAIPlayer<TGameState, TMove>({
   calculateAIMove,
   executeMove,
   moveDelay = 800,
+  getLatestState,
 }: UseAIPlayerOptions<TGameState, TMove>) {
   const { enabled, difficulty, aiPlayer } = useAIStore();
   const isProcessing = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Store refs to avoid stale closures and unnecessary re-renders
+  const getLatestStateRef = useRef(getLatestState);
+  const calculateAIMoveRef = useRef(calculateAIMove);
+  const executeMoveRef = useRef(executeMove);
+
+  // Update refs when functions change
+  useEffect(() => {
+    getLatestStateRef.current = getLatestState;
+    calculateAIMoveRef.current = calculateAIMove;
+    executeMoveRef.current = executeMove;
+  }, [getLatestState, calculateAIMove, executeMove]);
 
   // Extract currentTurn from gameState for dependency tracking
   const currentTurn = (gameState as { currentTurn?: string } | null)
@@ -49,51 +65,68 @@ export function useAIPlayer<TGameState, TMove>({
   const isAITurn =
     enabled && isPlaying && aiPlayer !== null && currentTurn === aiPlayer?.id;
 
-  // Execute AI move
+  // Execute AI move - uses refs to avoid stale closures
   const makeAIMove = useCallback(() => {
-    if (!gameState || !enabled || isProcessing.current) return;
+    // Get FRESH gameState from ref callback
+    const currentState = getLatestStateRef.current
+      ? getLatestStateRef.current()
+      : null;
 
-    isProcessing.current = true;
-
-    // Calculate best move based on difficulty
-    const move = calculateAIMove(gameState, difficulty);
-
-    // Execute with delay to feel more natural
-    timeoutRef.current = setTimeout(() => {
-      executeMove(move);
-      isProcessing.current = false;
-    }, moveDelay);
-  }, [gameState, enabled, difficulty, calculateAIMove, executeMove, moveDelay]);
-
-  // Watch for AI's turn
-  useEffect(() => {
-    // Skip if not AI's turn or already processing
-    if (
-      !enabled ||
-      !isPlaying ||
-      !gameState ||
-      !isAITurn ||
-      isProcessing.current
-    ) {
+    if (!currentState || !enabled || isProcessing.current) {
       return;
     }
 
-    makeAIMove();
+    isProcessing.current = true;
+
+    // Calculate best move based on difficulty with FRESH state
+    const move = calculateAIMoveRef.current(currentState, difficulty);
+
+    // Validate move is valid (cell is empty)
+    const board = (currentState as { board?: (string | null)[] }).board;
+    if (board && board[move as number] !== null) {
+      console.error("[AIPlayer] Invalid move! Cell already occupied:", move);
+      isProcessing.current = false;
+      return;
+    }
+
+    // Execute with delay to feel more natural
+    timeoutRef.current = setTimeout(() => {
+      executeMoveRef.current(move);
+      isProcessing.current = false;
+    }, moveDelay);
+  }, [enabled, difficulty, moveDelay]); // Minimal dependencies!
+
+  // Track if AI move has been scheduled for current turn
+  const moveScheduledForTurn = useRef<string | null>(null);
+
+  // Watch for AI's turn - minimal dependencies to avoid re-triggers
+  useEffect(() => {
+    // Skip if not AI's turn
+    if (!enabled || !isPlaying || !isAITurn) {
+      // Reset scheduled turn when it's not AI's turn
+      if (!isAITurn) {
+        moveScheduledForTurn.current = null;
+        isProcessing.current = false;
+      }
+      return;
+    }
+
+    // Skip if already scheduled move for this turn
+    if (moveScheduledForTurn.current === currentTurn) {
+      return;
+    }
+
+    moveScheduledForTurn.current = currentTurn ?? null;
+
+    // Small delay to ensure state is stable before AI moves
+    const startDelay = setTimeout(() => {
+      makeAIMove();
+    }, 150);
 
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      clearTimeout(startDelay);
     };
-  }, [
-    enabled,
-    isPlaying,
-    currentTurn,
-    aiPlayer?.id,
-    isAITurn,
-    gameState,
-    makeAIMove,
-  ]);
+  }, [enabled, isPlaying, isAITurn, currentTurn, makeAIMove]); // Only track turn changes!
 
   // Cleanup on unmount
   useEffect(() => {

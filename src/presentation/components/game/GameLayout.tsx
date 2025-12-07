@@ -1,5 +1,6 @@
 "use client";
 
+import { SoundSettings } from "@/src/presentation/components/ui/SoundSettings";
 import { ThemeToggle } from "@/src/presentation/components/ui/ThemeToggle";
 import { ArrowLeft, Clock, RotateCcw, Users } from "lucide-react";
 import { ReactNode } from "react";
@@ -95,6 +96,7 @@ export function GameLayout({
               <RotateCcw className="w-4 h-4" />
             </button>
           )}
+          <SoundSettings />
           <ThemeToggle />
         </div>
       </header>

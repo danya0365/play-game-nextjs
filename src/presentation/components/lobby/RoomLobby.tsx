@@ -1,5 +1,6 @@
 "use client";
 
+import { useSound } from "@/src/presentation/hooks/useSound";
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
 import { useUserStore } from "@/src/presentation/stores/userStore";
 import {
@@ -13,7 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LobbyLayout } from "./LobbyLayout";
 import { EmptyPlayerSlot, PlayerCard } from "./PlayerCard";
 
@@ -46,6 +47,27 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
 
   const [copied, setCopied] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  const { playPlayerJoin, playPlayerReady, playGameStart, startBgm, stopBgm } =
+    useSound();
+  const prevPlayerCountRef = useRef(0);
+
+  // Start waiting BGM when entering room
+  useEffect(() => {
+    startBgm("waiting");
+    return () => stopBgm();
+  }, [startBgm, stopBgm]);
+
+  // Play sound when player joins
+  useEffect(() => {
+    const currentCount = room?.players.length ?? 0;
+    if (
+      currentCount > prevPlayerCountRef.current &&
+      prevPlayerCountRef.current > 0
+    ) {
+      playPlayerJoin();
+    }
+    prevPlayerCountRef.current = currentCount;
+  }, [room?.players.length, playPlayerJoin]);
 
   // Redirect to game when playing
   useEffect(() => {
@@ -106,11 +128,14 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   const handleReady = () => {
     const currentPlayer = room?.players.find((p) => p.odId === user?.id);
     if (currentPlayer) {
+      playPlayerReady();
       setReady(!currentPlayer.isReady);
     }
   };
 
   const handleStart = () => {
+    playGameStart();
+    stopBgm();
     setError(null);
     startGame();
   };

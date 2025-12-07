@@ -1,6 +1,7 @@
 "use client";
 
 import { peerManager } from "@/src/infrastructure/p2p/peerManager";
+import { useSound } from "@/src/presentation/hooks/useSound";
 import { useUserStore } from "@/src/presentation/stores/userStore";
 import { ChevronDown, MessageCircle, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -24,6 +25,7 @@ interface ChatMessage {
  */
 export function ChatHUD() {
   const { user } = useUserStore();
+  const { playChat, playClick } = useSound();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState("");
@@ -68,17 +70,19 @@ export function ChatHUD() {
       // Increment unread if chat is closed
       if (!isOpen) {
         setUnreadCount((prev) => prev + 1);
+        playChat();
       }
     });
 
     return () => {
       unsubscribe();
     };
-  }, [isOpen]);
+  }, [isOpen, playChat]);
 
   const handleSend = () => {
     if (!inputValue.trim() || !user) return;
 
+    playClick();
     const text = inputValue.trim();
     setInputValue("");
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { SoundSettings } from "@/src/presentation/components/ui/SoundSettings";
 import { ThemeToggle } from "@/src/presentation/components/ui/ThemeToggle";
 import { ArrowLeft, Gamepad2 } from "lucide-react";
 import Link from "next/link";
@@ -60,6 +61,7 @@ export function LobbyLayout({
 
         {/* Right Section */}
         <div className="flex items-center gap-2">
+          <SoundSettings />
           <ThemeToggle />
           <Link
             href="/"

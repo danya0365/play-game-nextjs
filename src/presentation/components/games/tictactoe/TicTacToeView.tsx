@@ -3,12 +3,13 @@
 import { ChatHUD } from "@/src/presentation/components/game/ChatHUD";
 import { GameCanvas } from "@/src/presentation/components/game/GameCanvas";
 import { GameLayout } from "@/src/presentation/components/game/GameLayout";
+import { useSound } from "@/src/presentation/hooks/useSound";
 import { useGameStore } from "@/src/presentation/stores/gameStore";
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
 import { useUserStore } from "@/src/presentation/stores/userStore";
 import { Frown, Handshake, RotateCcw, Trophy } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { TicTacToe3D } from "./TicTacToe3D";
 
 /**
@@ -27,6 +28,20 @@ export function TicTacToeView() {
     resetGame,
     setShowResult,
   } = useGameStore();
+  const {
+    playPlaceMark,
+    playWin,
+    playLose,
+    playDraw,
+    playGameStart,
+    playTurnStart,
+    playClick,
+    startGameBgm,
+    stopBgm,
+  } = useSound();
+
+  // Track previous turn to play sound on turn change
+  const prevTurnRef = useRef<string | null>(null);
 
   // Debug logging
   useEffect(() => {
@@ -46,25 +61,66 @@ export function TicTacToeView() {
     if (room && !gameState) {
       console.log("[TicTacToe] Initializing game, room status:", room.status);
       initGame();
+      playGameStart();
+      startGameBgm();
     } else if (!room) {
       console.log("[TicTacToe] No room found, redirecting...");
       // If no room, redirect back to games
       router.push("/games");
     }
-  }, [room, gameState, initGame, router]);
+  }, [room, gameState, initGame, router, playGameStart, startGameBgm]);
+
+  // Play sound on turn change
+  useEffect(() => {
+    if (gameState && gameState.currentTurn !== prevTurnRef.current) {
+      if (prevTurnRef.current !== null) {
+        // Not first turn, play turn sound
+        if (gameState.currentTurn === user?.id) {
+          playTurnStart();
+        }
+      }
+      prevTurnRef.current = gameState.currentTurn;
+    }
+  }, [gameState?.currentTurn, user?.id, playTurnStart]);
+
+  // Play sound on game end
+  useEffect(() => {
+    if (gameState?.status === "finished") {
+      stopBgm();
+      if (gameState.winner === user?.id) {
+        playWin();
+      } else if (gameState.winner === null) {
+        playDraw();
+      } else {
+        playLose();
+      }
+    }
+  }, [
+    gameState?.status,
+    gameState?.winner,
+    user?.id,
+    playWin,
+    playLose,
+    playDraw,
+    stopBgm,
+  ]);
 
   const handleLeave = () => {
+    stopBgm();
     leaveRoom();
     router.push("/games");
   };
 
   const handleRestart = () => {
     if (isHost) {
+      playClick();
       resetGame();
+      startGameBgm();
     }
   };
 
   const handleCellClick = (index: number) => {
+    playPlaceMark();
     placeMark(index);
   };
 

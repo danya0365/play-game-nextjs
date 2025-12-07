@@ -1,6 +1,15 @@
 "use client";
 
 import type {
+  CoinFlipAction,
+  CoinFlipState,
+  CoinGuess,
+} from "@/src/domain/types/coinFlipState";
+import {
+  applyCoinFlipAction,
+  createCoinFlipState,
+} from "@/src/domain/types/coinFlipState";
+import type {
   ConnectFourAction,
   ConnectFourState,
 } from "@/src/domain/types/connectFourState";
@@ -34,7 +43,11 @@ import { useRoomStore } from "./roomStore";
 import { useUserStore } from "./userStore";
 
 // Union type for all game states
-type AnyGameState = TicTacToeState | ConnectFourState | RockPaperScissorsState;
+type AnyGameState =
+  | TicTacToeState
+  | ConnectFourState
+  | RockPaperScissorsState
+  | CoinFlipState;
 
 /**
  * Game Store State
@@ -68,6 +81,9 @@ interface GameActions {
 
   // Actions - Rock Paper Scissors
   makeRPSChoice: (choice: RPSChoice, forPlayerId?: string) => void;
+
+  // Actions - Coin Flip
+  makeCoinFlipGuess: (guess: CoinGuess, forPlayerId?: string) => void;
 
   // P2P handlers
   handleGameMessage: (message: P2PMessage) => void;
@@ -138,6 +154,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
           gamePlayers,
           aiGamePlayer
         );
+        break;
+      case "coin-flip":
+        state = createCoinFlipState(room.id, gamePlayers, aiGamePlayer);
         break;
       case "tic-tac-toe":
       default:
@@ -210,6 +229,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break;
       case "rock-paper-scissors":
         newState = createRockPaperScissorsState(
+          room.id,
+          gameState.players.filter((p) => !p.isAI),
+          aiGamePlayer
+        );
+        break;
+      case "coin-flip":
+        newState = createCoinFlipState(
           room.id,
           gameState.players.filter((p) => !p.isAI),
           aiGamePlayer
@@ -413,6 +439,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     // Broadcast action
+    const room = useRoomStore.getState().room;
+    if (room) {
+      peerManager.broadcast("game_action", { action, newState });
+    }
+  },
+
+  /**
+   * Make Coin Flip guess
+   */
+  makeCoinFlipGuess: (guess: CoinGuess, forPlayerId?: string) => {
+    const { gameState, isPlaying } = get();
+    if (!gameState || !isPlaying) return;
+
+    // Type guard for Coin Flip
+    if (!("currentFlipResult" in gameState)) return;
+
+    const cfState = gameState as CoinFlipState;
+    const user = useUserStore.getState().user;
+    const playerId = forPlayerId ?? user?.id;
+    if (!playerId) return;
+
+    if (playerId !== cfState.player1 && playerId !== cfState.player2) {
+      return;
+    }
+
+    const action: CoinFlipAction = {
+      type: "make_guess",
+      playerId,
+      timestamp: Date.now(),
+      data: { guess },
+    };
+
+    const newState = applyCoinFlipAction(cfState, action);
+    set({ gameState: newState });
+
+    if (newState.status === "finished") {
+      set({ isPlaying: false, showResult: true });
+    }
+
     const room = useRoomStore.getState().room;
     if (room) {
       peerManager.broadcast("game_action", { action, newState });

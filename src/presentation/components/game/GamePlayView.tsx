@@ -1,6 +1,7 @@
 "use client";
 
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
+import { CoinFlipView } from "../games/coin-flip/CoinFlipView";
 import { ConnectFourView } from "../games/connect-four/ConnectFourView";
 import { RockPaperScissorsView } from "../games/rock-paper-scissors/RockPaperScissorsView";
 import { TicTacToeView } from "../games/tictactoe/TicTacToeView";
@@ -33,6 +34,9 @@ export function GamePlayView() {
 
     case "rock-paper-scissors":
       return <RockPaperScissorsView />;
+
+    case "coin-flip":
+      return <CoinFlipView />;
 
     default:
       return (

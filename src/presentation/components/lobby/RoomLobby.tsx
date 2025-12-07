@@ -1,5 +1,6 @@
 "use client";
 
+import { useAIStore } from "@/src/presentation/stores/aiStore";
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
 import { useSound } from "@/src/presentation/stores/soundStore";
 import { useUserStore } from "@/src/presentation/stores/userStore";
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { AISettings } from "../game/AISettings";
 import { LobbyLayout } from "./LobbyLayout";
 import { EmptyPlayerSlot, PlayerCard } from "./PlayerCard";
 
@@ -50,6 +52,9 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   const { playPlayerJoin, playPlayerReady, playGameStart, startBgm, stopBgm } =
     useSound();
   const prevPlayerCountRef = useRef(0);
+
+  // AI state - must be at top level before any returns
+  const { enabled: isAIEnabled, aiPlayer } = useAIStore();
 
   // Start waiting BGM when entering room
   useEffect(() => {
@@ -137,7 +142,7 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
     playGameStart();
     stopBgm();
     setError(null);
-    startGame();
+    startGame(isAIEnabled);
   };
 
   const handleKick = (odId: string) => {
@@ -188,8 +193,16 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   }
 
   const currentPlayer = room.players.find((p) => p.odId === user?.id);
-  const allPlayersReady = room.players.every((p) => p.isReady);
-  const hasEnoughPlayers = room.players.length >= room.config.minPlayers;
+
+  // AI counts as a player
+  const effectivePlayerCount = room.players.length + (isAIEnabled ? 1 : 0);
+  const hasEnoughPlayers = effectivePlayerCount >= room.config.minPlayers;
+
+  // When playing vs AI, host doesn't need others to be ready
+  // Otherwise, all human players must be ready
+  const allPlayersReady = isAIEnabled
+    ? room.players.length === 1 || room.players.every((p) => p.isReady)
+    : room.players.every((p) => p.isReady);
   const canStart = isHost && allPlayersReady && hasEnoughPlayers;
 
   if (room.status === "playing" || room.status === "starting") {
@@ -218,7 +231,7 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-muted" />
               <span className="font-medium">
-                ผู้เล่น ({room.players.length}/{room.config.maxPlayers})
+                ผู้เล่น ({effectivePlayerCount}/{room.config.maxPlayers})
               </span>
             </div>
             {isHost && (
@@ -240,26 +253,55 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
               />
             ))}
 
+            {/* AI Player Card */}
+            {isAIEnabled && aiPlayer && (
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-info/10 border-2 border-info/30">
+                <span className="text-3xl">{aiPlayer.avatar}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium truncate">
+                      {aiPlayer.nickname}
+                    </span>
+                    <span className="shrink-0 px-2 py-0.5 rounded-full bg-info/20 text-info text-xs">
+                      AI
+                    </span>
+                  </div>
+                  <span className="text-xs text-muted">พร้อมเล่นแล้ว</span>
+                </div>
+                <Check className="w-5 h-5 text-success" />
+              </div>
+            )}
+
             {/* Empty Slots */}
             {Array.from({
-              length: room.config.maxPlayers - room.players.length,
+              length: Math.max(
+                0,
+                room.config.maxPlayers -
+                  room.players.length -
+                  (isAIEnabled ? 1 : 0)
+              ),
             }).map((_, i) => (
               <EmptyPlayerSlot
                 key={`empty-${i}`}
-                index={room.players.length + i}
+                index={room.players.length + (isAIEnabled ? 1 : 0) + i}
               />
             ))}
           </div>
 
           {/* Status Messages */}
-          {!hasEnoughPlayers && (
+          {!hasEnoughPlayers && !isAIEnabled && (
             <div className="mt-4 p-3 rounded-lg bg-warning/10 border border-warning/30 text-warning text-sm text-center">
               ต้องมีผู้เล่นอย่างน้อย {room.config.minPlayers} คนถึงจะเริ่มเกมได้
             </div>
           )}
-          {hasEnoughPlayers && !allPlayersReady && (
+          {hasEnoughPlayers && !allPlayersReady && !isAIEnabled && (
             <div className="mt-4 p-3 rounded-lg bg-info/10 border border-info/30 text-info text-sm text-center">
               รอผู้เล่นทุกคนกดพร้อม
+            </div>
+          )}
+          {isAIEnabled && hasEnoughPlayers && (
+            <div className="mt-4 p-3 rounded-lg bg-success/10 border border-success/30 text-success text-sm text-center">
+              พร้อมเล่นกับ AI แล้ว! กดเริ่มเกมได้เลย
             </div>
           )}
         </div>
@@ -301,6 +343,9 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
                 <span>แชร์ลิงก์</span>
               </button>
             </div>
+
+            {/* AI Settings - Host Only */}
+            {isHost && <AISettings />}
 
             {/* Spacer */}
             <div className="flex-1" />

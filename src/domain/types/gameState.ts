@@ -27,6 +27,7 @@ export interface GamePlayer {
   avatar: string;
   score: number;
   isActive: boolean;
+  isAI?: boolean;
 }
 
 /**
@@ -68,13 +69,26 @@ export interface TicTacToeAction extends BaseGameAction<{ cellIndex: number }> {
 
 /**
  * Create initial Tic Tac Toe state
+ * @param roomId - Room ID
+ * @param players - List of players (can include AI player)
+ * @param aiPlayer - Optional AI player to add if not enough players
  */
 export function createTicTacToeState(
   roomId: string,
-  players: GamePlayer[]
+  players: GamePlayer[],
+  aiPlayer?: GamePlayer | null
 ): TicTacToeState {
+  // Add AI player if provided and needed
+  const allPlayers =
+    aiPlayer && players.length < 2 ? [...players, aiPlayer] : [...players];
+
+  // Ensure we have at least 2 players
+  if (allPlayers.length < 2) {
+    throw new Error("Need at least 2 players to start TicTacToe");
+  }
+
   // Randomly assign X and O
-  const shuffled = [...players].sort(() => Math.random() - 0.5);
+  const shuffled = [...allPlayers].sort(() => Math.random() - 0.5);
 
   return {
     gameId: `ttt_${Date.now()}`,
@@ -83,7 +97,7 @@ export function createTicTacToeState(
     currentTurn: shuffled[0].odId, // X goes first
     turnNumber: 1,
     winner: null,
-    players,
+    players: allPlayers,
     startedAt: Date.now(),
     lastActionAt: Date.now(),
     board: Array(9).fill(null),

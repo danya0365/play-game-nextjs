@@ -3,130 +3,55 @@
 import { ChatHUD } from "@/src/presentation/components/game/ChatHUD";
 import { GameCanvas } from "@/src/presentation/components/game/GameCanvas";
 import { GameLayout } from "@/src/presentation/components/game/GameLayout";
-import { useGameStore } from "@/src/presentation/stores/gameStore";
-import { useRoomStore } from "@/src/presentation/stores/roomStore";
-import { useSound } from "@/src/presentation/stores/soundStore";
-import { useUserStore } from "@/src/presentation/stores/userStore";
-import { Frown, Handshake, RotateCcw, Trophy } from "lucide-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useDevicePerformance } from "@/src/presentation/hooks/useDevicePerformance";
+import { useTicTacToeGame } from "@/src/presentation/hooks/useTicTacToeGame";
+import {
+  Frown,
+  Handshake,
+  Monitor,
+  RotateCcw,
+  Smartphone,
+  Trophy,
+} from "lucide-react";
+import { useState } from "react";
+import { TicTacToe2D } from "./TicTacToe2D";
 import { TicTacToe3D } from "./TicTacToe3D";
 
 /**
  * Tic Tac Toe Game View
+ * Supports both 3D (WebGL) and 2D (HTML) rendering based on device performance
  */
 export function TicTacToeView() {
-  const router = useRouter();
-  const { user } = useUserStore();
-  const { room, leaveRoom, isHost } = useRoomStore();
+  // Game logic hook
   const {
+    room,
     gameState,
+    isHost,
     isPlaying,
+    isMyTurn,
+    myMark,
+    currentTurnPlayer,
     showResult,
-    initGame,
-    placeMark,
-    resetGame,
     setShowResult,
-  } = useGameStore();
-  const {
-    playPlaceMark,
-    playWin,
-    playLose,
-    playDraw,
-    playGameStart,
-    playTurnStart,
-    playClick,
-    startGameBgm,
-    stopBgm,
-  } = useSound();
+    board,
+    winningLine,
+    handleCellClick,
+    handleRestart,
+    handleLeave,
+    handleCloseResult,
+    getResultInfo,
+  } = useTicTacToeGame();
 
-  // Track previous turn to play sound on turn change
-  const prevTurnRef = useRef<string | null>(null);
+  // Device performance detection
+  const { isLowEnd, supportsWebGL } = useDevicePerformance();
 
-  // Debug logging
-  useEffect(() => {
-    console.log(
-      "[TicTacToe] Mount - room:",
-      room,
-      "gameState:",
-      gameState,
-      "user:",
-      user
-    );
-  }, []);
+  // Allow user to manually toggle render mode
+  const [forceMode, setForceMode] = useState<"auto" | "3d" | "2d">("auto");
 
-  // Initialize game when component mounts
-  useEffect(() => {
-    // Initialize game if room exists and no game state yet
-    if (room && !gameState) {
-      console.log("[TicTacToe] Initializing game, room status:", room.status);
-      initGame();
-      playGameStart();
-      startGameBgm();
-    } else if (!room) {
-      console.log("[TicTacToe] No room found, redirecting...");
-      // If no room, redirect back to games
-      router.push("/games");
-    }
-  }, [room, gameState, initGame, router, playGameStart, startGameBgm]);
-
-  // Play sound on turn change
-  useEffect(() => {
-    if (gameState && gameState.currentTurn !== prevTurnRef.current) {
-      if (prevTurnRef.current !== null) {
-        // Not first turn, play turn sound
-        if (gameState.currentTurn === user?.id) {
-          playTurnStart();
-        }
-      }
-      prevTurnRef.current = gameState.currentTurn;
-    }
-  }, [gameState?.currentTurn, user?.id, playTurnStart]);
-
-  // Play sound on game end
-  useEffect(() => {
-    if (gameState?.status === "finished") {
-      stopBgm();
-      if (gameState.winner === user?.id) {
-        playWin();
-      } else if (gameState.winner === null) {
-        playDraw();
-      } else {
-        playLose();
-      }
-    }
-  }, [
-    gameState?.status,
-    gameState?.winner,
-    user?.id,
-    playWin,
-    playLose,
-    playDraw,
-    stopBgm,
-  ]);
-
-  const handleLeave = () => {
-    stopBgm();
-    leaveRoom();
-    router.push("/games");
-  };
-
-  const handleRestart = () => {
-    if (isHost) {
-      playClick();
-      resetGame();
-      startGameBgm();
-    }
-  };
-
-  const handleCellClick = (index: number) => {
-    playPlaceMark();
-    placeMark(index);
-  };
-
-  const handleCloseResult = () => {
-    setShowResult(false);
-  };
+  // Determine render mode
+  const shouldUse2D =
+    forceMode === "2d" ||
+    (forceMode === "auto" && (isLowEnd || !supportsWebGL));
 
   // Loading state
   if (!room || !gameState) {
@@ -138,43 +63,6 @@ export function TicTacToeView() {
       </GameLayout>
     );
   }
-
-  // Determine player info
-  const isMyTurn = gameState.currentTurn === user?.id;
-  const myMark = gameState.playerX === user?.id ? "X" : "O";
-  const currentTurnPlayer = gameState.players.find(
-    (p) => p.odId === gameState.currentTurn
-  );
-
-  // Game result
-  const getResultInfo = () => {
-    if (!gameState.winner) {
-      return {
-        icon: <Handshake className="w-16 h-16 text-warning" />,
-        title: "เสมอ!",
-        subtitle: "ไม่มีผู้ชนะในรอบนี้",
-        isWin: false,
-      };
-    }
-
-    const isWinner = gameState.winner === user?.id;
-    const winnerPlayer = gameState.players.find(
-      (p) => p.odId === gameState.winner
-    );
-
-    return {
-      icon: isWinner ? (
-        <Trophy className="w-16 h-16 text-warning" />
-      ) : (
-        <Frown className="w-16 h-16 text-error" />
-      ),
-      title: isWinner ? "คุณชนะ!" : "คุณแพ้",
-      subtitle: isWinner
-        ? "ยินดีด้วย! คุณเป็นผู้ชนะ"
-        : `${winnerPlayer?.nickname} เป็นผู้ชนะ`,
-      isWin: isWinner,
-    };
-  };
 
   return (
     <GameLayout
@@ -194,22 +82,60 @@ export function TicTacToeView() {
       onRestart={handleRestart}
       showRestart={isHost && gameState.status === "finished"}
     >
-      {/* 3D Game Canvas - responsive for mobile */}
-      <GameCanvas
-        cameraPosition={[0, 8, 8]}
-        mobileCameraPosition={[0, 12, 10]}
-        cameraFov={45}
-        mobileCameraFov={55}
-        enableOrbit={true}
-        backgroundColor="#0f0f1a"
-      >
-        <TicTacToe3D
-          board={gameState.board}
-          winningLine={gameState.winningLine}
-          isMyTurn={isMyTurn && isPlaying}
-          onCellClick={handleCellClick}
-        />
-      </GameCanvas>
+      {/* Game Board - 3D or 2D based on device performance */}
+      {shouldUse2D ? (
+        <div className="absolute inset-0 bg-[#0f0f1a]">
+          <TicTacToe2D
+            board={board}
+            winningLine={winningLine}
+            isMyTurn={isMyTurn && isPlaying}
+            onCellClick={handleCellClick}
+          />
+        </div>
+      ) : (
+        <GameCanvas
+          cameraPosition={[0, 8, 8]}
+          mobileCameraPosition={[0, 12, 10]}
+          cameraFov={45}
+          mobileCameraFov={55}
+          enableOrbit={true}
+          backgroundColor="#0f0f1a"
+        >
+          <TicTacToe3D
+            board={gameState.board}
+            winningLine={gameState.winningLine}
+            isMyTurn={isMyTurn && isPlaying}
+            onCellClick={handleCellClick}
+          />
+        </GameCanvas>
+      )}
+
+      {/* Render Mode Toggle */}
+      <div className="absolute top-2 md:top-4 right-2 md:right-4 z-10">
+        <div className="flex items-center gap-1 bg-surface/90 backdrop-blur-sm border border-border rounded-lg p-1">
+          <button
+            onClick={() => setForceMode(forceMode === "3d" ? "2d" : "3d")}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors ${
+              !shouldUse2D
+                ? "bg-info text-white"
+                : "hover:bg-muted-light dark:hover:bg-muted-dark"
+            }`}
+            title="สลับโหมด 3D/2D"
+          >
+            {shouldUse2D ? (
+              <>
+                <Smartphone className="w-3 h-3" />
+                <span className="hidden sm:inline">2D</span>
+              </>
+            ) : (
+              <>
+                <Monitor className="w-3 h-3" />
+                <span className="hidden sm:inline">3D</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Turn Indicator Overlay - mobile responsive */}
       <div className="absolute bottom-20 md:bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-10">
@@ -294,9 +220,20 @@ export function TicTacToeView() {
           <div className="bg-surface border border-border rounded-2xl p-8 max-w-sm w-full mx-4 text-center animate-in zoom-in-95">
             {(() => {
               const result = getResultInfo();
+              if (!result) return null;
               return (
                 <>
-                  <div className="flex justify-center mb-4">{result.icon}</div>
+                  <div className="flex justify-center mb-4">
+                    {result.type === "draw" && (
+                      <Handshake className="w-16 h-16 text-warning" />
+                    )}
+                    {result.type === "win" && (
+                      <Trophy className="w-16 h-16 text-warning" />
+                    )}
+                    {result.type === "lose" && (
+                      <Frown className="w-16 h-16 text-error" />
+                    )}
+                  </div>
                   <h2 className="text-2xl font-bold mb-2">{result.title}</h2>
                   <p className="text-muted mb-6">{result.subtitle}</p>
 

@@ -452,32 +452,51 @@ class SoundService {
     }
   }
 
-  // Waiting room BGM - Lo-fi chill relaxing music (soft & warm)
+  // Waiting room BGM - 16-bit retro game style
   private playWaitingBgm() {
-    // Lower chord progressions - warm bass range (C3, E3, G3 based)
-    const chordProgressions = [
-      [130.81, 164.81, 196.0], // C major (C3, E3, G3)
-      [110.0, 130.81, 164.81], // A minor (A2, C3, E3)
-      [87.31, 110.0, 130.81], // F major (F2, A2, C3)
-      [98.0, 123.47, 146.83], // G major (G2, B2, D3)
+    // 16-bit style melody - cheerful waiting theme
+    const melodyPattern = [
+      392.0,
+      440.0,
+      493.88,
+      523.25, // G4, A4, B4, C5 - ascending
+      493.88,
+      440.0,
+      392.0,
+      329.63, // B4, A4, G4, E4 - descending
+      349.23,
+      392.0,
+      440.0,
+      392.0, // F4, G4, A4, G4 - bounce
+      329.63,
+      293.66,
+      261.63,
+      293.66, // E4, D4, C4, D4 - resolve
     ];
 
-    // Lower melody notes - warm mid range (C4, D4, E4, G4)
-    const melodyNotes = [
-      261.63,
-      293.66,
-      329.63,
-      392.0, // C4, D4, E4, G4
-      329.63,
-      293.66,
-      261.63,
-      220.0, // descending to A3
+    // Bass pattern - simple but groovy
+    const bassPattern = [
+      130.81,
+      130.81,
+      98.0,
+      98.0, // C3, C3, G2, G2
+      110.0,
+      110.0,
+      87.31,
+      98.0, // A2, A2, F2, G2
     ];
 
-    let chordIndex = 0;
-    let beatCount = 0;
+    // Arpeggio chords for that 16-bit sparkle
+    const arpeggioChords = [
+      [261.63, 329.63, 392.0], // C major
+      [220.0, 261.63, 329.63], // A minor
+      [174.61, 220.0, 261.63], // F major
+      [196.0, 246.94, 293.66], // G major
+    ];
 
-    const playChillBeat = () => {
+    let stepIndex = 0;
+
+    const play16BitBeat = () => {
       if (
         !this.bgmPlaying ||
         !this.bgmEnabled ||
@@ -492,101 +511,121 @@ class SoundService {
         }
 
         const now = ctx.currentTime;
-        const chord = chordProgressions[chordIndex];
         const vol = this.bgmVolume;
 
-        // Soft warm pad (bass foundation)
-        chord.forEach((freq, i) => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          const filter = ctx.createBiquadFilter();
+        // === MELODY (Square wave - classic 16-bit sound) ===
+        const melodyNote = melodyPattern[stepIndex % melodyPattern.length];
+        const melOsc = ctx.createOscillator();
+        const melGain = ctx.createGain();
 
-          osc.type = "sine";
-          filter.type = "lowpass";
-          filter.frequency.value = 400; // Very warm, no harsh highs
-          filter.Q.value = 0.5;
+        melOsc.type = "square";
+        melOsc.connect(melGain);
+        melGain.connect(ctx.destination);
 
-          osc.connect(filter);
-          filter.connect(gain);
-          gain.connect(ctx.destination);
+        melOsc.frequency.setValueAtTime(melodyNote, now);
+        melGain.gain.setValueAtTime(vol * 0.08, now);
+        melGain.gain.linearRampToValueAtTime(vol * 0.06, now + 0.1);
+        melGain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
 
-          osc.frequency.setValueAtTime(freq, now);
+        melOsc.start(now);
+        melOsc.stop(now + 0.2);
 
-          // Very slow swell - gentle
-          gain.gain.setValueAtTime(0, now);
-          gain.gain.linearRampToValueAtTime(vol * 0.15, now + 1.0);
-          gain.gain.setValueAtTime(vol * 0.15, now + 2.0);
-          gain.gain.linearRampToValueAtTime(0, now + 3.5);
+        // === BASS (Triangle wave - warm 16-bit bass) ===
+        const bassNote = bassPattern[stepIndex % bassPattern.length];
+        const bassOsc = ctx.createOscillator();
+        const bassGain = ctx.createGain();
 
-          osc.start(now + i * 0.1);
-          osc.stop(now + 3.5);
-        });
+        bassOsc.type = "triangle";
+        bassOsc.connect(bassGain);
+        bassGain.connect(ctx.destination);
 
-        // Gentle arpeggio - same octave, soft triangle wave
-        if (beatCount % 3 === 0) {
-          chord.slice(0, 2).forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            const filter = ctx.createBiquadFilter();
+        bassOsc.frequency.setValueAtTime(bassNote, now);
+        bassGain.gain.setValueAtTime(vol * 0.12, now);
+        bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
 
-            osc.type = "triangle";
-            filter.type = "lowpass";
-            filter.frequency.value = 600;
+        bassOsc.start(now);
+        bassOsc.stop(now + 0.18);
 
-            osc.connect(filter);
-            filter.connect(gain);
-            gain.connect(ctx.destination);
+        // === ARPEGGIO (Every 4 steps - sparkly effect) ===
+        if (stepIndex % 4 === 0) {
+          const chordIndex = Math.floor(stepIndex / 4) % arpeggioChords.length;
+          const chord = arpeggioChords[chordIndex];
 
-            const noteTime = now + 0.5 + i * 0.3;
-            osc.frequency.setValueAtTime(freq * 1.5, noteTime); // Half octave up only
+          chord.forEach((note, i) => {
+            const arpOsc = ctx.createOscillator();
+            const arpGain = ctx.createGain();
 
-            gain.gain.setValueAtTime(0, noteTime);
-            gain.gain.linearRampToValueAtTime(vol * 0.06, noteTime + 0.1);
-            gain.gain.linearRampToValueAtTime(0, noteTime + 1.0);
+            arpOsc.type = "square";
+            arpOsc.connect(arpGain);
+            arpGain.connect(ctx.destination);
 
-            osc.start(noteTime);
-            osc.stop(noteTime + 1.0);
+            const noteTime = now + i * 0.05;
+            arpOsc.frequency.setValueAtTime(note * 2, noteTime); // One octave up
+
+            arpGain.gain.setValueAtTime(0, noteTime);
+            arpGain.gain.linearRampToValueAtTime(vol * 0.04, noteTime + 0.02);
+            arpGain.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.12);
+
+            arpOsc.start(noteTime);
+            arpOsc.stop(noteTime + 0.15);
           });
         }
 
-        // Soft melody - lower, filtered
-        if (beatCount % 4 === 0) {
-          const melodyNote =
-            melodyNotes[Math.floor(Math.random() * melodyNotes.length)];
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          const filter = ctx.createBiquadFilter();
+        // === DRUM (Noise-based - every 2 steps) ===
+        if (stepIndex % 2 === 0) {
+          // Kick-like sound
+          const kickOsc = ctx.createOscillator();
+          const kickGain = ctx.createGain();
 
-          osc.type = "sine";
-          filter.type = "lowpass";
-          filter.frequency.value = 500; // Very soft
+          kickOsc.type = "sine";
+          kickOsc.connect(kickGain);
+          kickGain.connect(ctx.destination);
 
-          osc.connect(filter);
-          filter.connect(gain);
-          gain.connect(ctx.destination);
+          kickOsc.frequency.setValueAtTime(150, now);
+          kickOsc.frequency.exponentialRampToValueAtTime(50, now + 0.08);
+          kickGain.gain.setValueAtTime(vol * 0.15, now);
+          kickGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
-          osc.frequency.setValueAtTime(melodyNote, now + 1.5);
-
-          gain.gain.setValueAtTime(0, now + 1.5);
-          gain.gain.linearRampToValueAtTime(vol * 0.08, now + 1.7);
-          gain.gain.linearRampToValueAtTime(0, now + 3.0);
-
-          osc.start(now + 1.5);
-          osc.stop(now + 3.0);
+          kickOsc.start(now);
+          kickOsc.stop(now + 0.1);
         }
 
-        // Advance chord every 4 beats
-        beatCount++;
-        if (beatCount % 4 === 0) {
-          chordIndex = (chordIndex + 1) % chordProgressions.length;
+        // Hi-hat on off-beats
+        if (stepIndex % 2 === 1) {
+          const bufferSize = ctx.sampleRate * 0.02;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * 0.5;
+          }
+
+          const noise = ctx.createBufferSource();
+          const noiseGain = ctx.createGain();
+          const noiseFilter = ctx.createBiquadFilter();
+
+          noise.buffer = buffer;
+          noiseFilter.type = "highpass";
+          noiseFilter.frequency.value = 7000;
+
+          noise.connect(noiseFilter);
+          noiseFilter.connect(noiseGain);
+          noiseGain.connect(ctx.destination);
+
+          noiseGain.gain.setValueAtTime(vol * 0.05, now);
+          noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.03);
+
+          noise.start(now);
+          noise.stop(now + 0.03);
         }
+
+        stepIndex++;
       } catch (e) {
         console.warn("Waiting BGM failed:", e);
       }
     };
 
-    playChillBeat();
-    this.bgmInterval = setInterval(playChillBeat, 2500); // Slower tempo
+    play16BitBeat();
+    this.bgmInterval = setInterval(play16BitBeat, 180); // Fast 16-bit tempo (~166 BPM)
   }
 
   // Game BGM - Dragon Quest inspired styles

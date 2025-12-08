@@ -35,7 +35,7 @@ interface RoomLobbyProps {
  */
 export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   const router = useRouter();
-  const { user } = useUserStore();
+  const { user, isHydrated } = useUserStore();
   const {
     room,
     isHost,
@@ -91,6 +91,9 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
 
   // Initialize connection and join room
   useEffect(() => {
+    // Wait for hydration to complete before checking user
+    if (!isHydrated) return;
+
     const init = async () => {
       if (!user) {
         router.push(`/setup?redirect=/room/${hostPeerId}`);
@@ -111,7 +114,15 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
     };
 
     init();
-  }, [hostPeerId, user, initializePeer, joinRoom, isInRoom, router]);
+  }, [
+    hostPeerId,
+    user,
+    isHydrated,
+    initializePeer,
+    joinRoom,
+    isInRoom,
+    router,
+  ]);
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(hostPeerId);
@@ -156,6 +167,18 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
   const handleKick = (odId: string) => {
     kickPlayer(odId);
   };
+
+  // Wait for hydration
+  if (!isHydrated) {
+    return (
+      <LobbyLayout title="กำลังโหลด..." showBack={false}>
+        <div className="h-full flex flex-col items-center justify-center gap-4">
+          <Loader2 className="w-12 h-12 text-info animate-spin" />
+          <p className="text-muted">กำลังโหลดข้อมูล...</p>
+        </div>
+      </LobbyLayout>
+    );
+  }
 
   // Loading state
   if (isConnecting || isJoining) {

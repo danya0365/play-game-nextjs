@@ -160,6 +160,7 @@ export const useRoomStore = create<RoomStore>()(
         console.log("[RoomStore] Attempting to reconnect...", {
           isHost,
           roomId: room.id,
+          status: room.status,
         });
 
         try {
@@ -175,18 +176,24 @@ export const useRoomStore = create<RoomStore>()(
             // Guest needs to reconnect to host
             await peerManager.connectToPeer(room.hostPeerId);
 
-            // Send reconnect request
-            const user = useUserStore.getState().user;
-            if (user) {
-              peerManager.send<JoinRequestPayload>(
-                room.hostPeerId,
-                "join_request",
-                {
-                  odId: user.id,
-                  nickname: user.nickname,
-                  avatar: user.avatar,
-                }
-              );
+            // If game is in progress, request sync instead of join
+            if (room.status === "playing" || room.status === "starting") {
+              console.log("[RoomStore] Game in progress, requesting sync...");
+              peerManager.send(room.hostPeerId, "sync_request", {});
+            } else {
+              // Send join request for waiting rooms
+              const user = useUserStore.getState().user;
+              if (user) {
+                peerManager.send<JoinRequestPayload>(
+                  room.hostPeerId,
+                  "join_request",
+                  {
+                    odId: user.id,
+                    nickname: user.nickname,
+                    avatar: user.avatar,
+                  }
+                );
+              }
             }
 
             set({ isInRoom: true });
@@ -344,6 +351,48 @@ export const useRoomStore = create<RoomStore>()(
             if (user && payload.odId === user.id) {
               get().leaveRoom();
               set({ joinError: "คุณถูกเตะออกจากห้อง" });
+            }
+            break;
+          }
+
+          case "sync_request": {
+            // Host receives sync request, send current game state
+            if (!isHost) return;
+
+            const gameState = useGameStore.getState().gameState;
+            const currentRoom = get().room;
+
+            console.log("[RoomStore] Sync request received, sending state...");
+
+            peerManager.send(senderPeerId, "sync_response", {
+              room: currentRoom,
+              gameState: gameState,
+            });
+            break;
+          }
+
+          case "sync_response": {
+            // Guest receives sync response, update local state
+            const payload = message.payload as {
+              room: Room;
+              gameState: unknown;
+            };
+
+            console.log(
+              "[RoomStore] Sync response received, updating state..."
+            );
+
+            // Update room state
+            if (payload.room) {
+              set({ room: payload.room });
+            }
+
+            // Update game state and register handlers
+            if (payload.gameState) {
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              useGameStore.getState().setGameState(payload.gameState as any);
+              // Register message handlers for future game actions
+              useGameStore.getState().registerMessageHandlers();
             }
             break;
           }

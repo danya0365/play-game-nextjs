@@ -104,8 +104,10 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
         const myPeerId = await initializePeer();
 
         // If this is the host, they already have the room
-        // If not, they need to join
-        if (myPeerId !== hostPeerId && !isInRoom) {
+        // If not, they need to join/reconnect
+        if (myPeerId !== hostPeerId) {
+          // Always join - handles both new join and reconnect (after refresh)
+          // The host will detect reconnect by checking odId
           await joinRoom(hostPeerId);
         }
       } catch (error) {
@@ -114,15 +116,8 @@ export function RoomLobby({ hostPeerId }: RoomLobbyProps) {
     };
 
     init();
-  }, [
-    hostPeerId,
-    user,
-    isHydrated,
-    initializePeer,
-    joinRoom,
-    isInRoom,
-    router,
-  ]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hostPeerId, user, isHydrated]);
 
   const handleCopyLink = async () => {
     await navigator.clipboard.writeText(hostPeerId);

@@ -233,6 +233,40 @@ export const useRoomStore = create<RoomStore>()(
 
             const payload = message.payload as JoinRequestPayload;
 
+            // Check if player already exists (reconnecting with new peerId)
+            const existingPlayer = room.players.find(
+              (p) => p.odId === payload.odId
+            );
+
+            if (existingPlayer) {
+              // Player reconnecting - update their peerId
+              console.log(
+                "[RoomStore] Player reconnecting:",
+                payload.nickname,
+                "old peerId:",
+                existingPlayer.peerId,
+                "new peerId:",
+                senderPeerId
+              );
+
+              get().updatePlayer(payload.odId, {
+                peerId: senderPeerId,
+                isConnected: true,
+              });
+
+              // Send acceptance with current room state
+              const updatedRoom = get().room!;
+              peerManager.send<JoinResponsePayload>(
+                senderPeerId,
+                "join_accepted",
+                {
+                  success: true,
+                  room: updatedRoom,
+                }
+              );
+              return;
+            }
+
             // Check if room is full
             if (room.players.length >= room.config.maxPlayers) {
               peerManager.send<JoinResponsePayload>(

@@ -18,6 +18,15 @@ import {
   createConnectFourState,
 } from "@/src/domain/types/connectFourState";
 import type {
+  DiceRollAction,
+  DiceRollState,
+  DiceValue,
+} from "@/src/domain/types/diceRollState";
+import {
+  applyDiceRollAction,
+  createDiceRollState,
+} from "@/src/domain/types/diceRollState";
+import type {
   GamePlayer,
   TicTacToeAction,
   TicTacToeState,
@@ -47,7 +56,8 @@ type AnyGameState =
   | TicTacToeState
   | ConnectFourState
   | RockPaperScissorsState
-  | CoinFlipState;
+  | CoinFlipState
+  | DiceRollState;
 
 /**
  * Game Store State
@@ -84,6 +94,9 @@ interface GameActions {
 
   // Actions - Coin Flip
   makeCoinFlipGuess: (guess: CoinGuess, forPlayerId?: string) => void;
+
+  // Actions - Dice Roll
+  makeDiceRoll: (value: DiceValue, forPlayerId?: string) => void;
 
   // P2P handlers
   handleGameMessage: (message: P2PMessage) => void;
@@ -157,6 +170,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break;
       case "coin-flip":
         state = createCoinFlipState(room.id, gamePlayers, aiGamePlayer);
+        break;
+      case "dice-roll":
+        state = createDiceRollState(room.id, gamePlayers, aiGamePlayer);
         break;
       case "tic-tac-toe":
       default:
@@ -236,6 +252,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         break;
       case "coin-flip":
         newState = createCoinFlipState(
+          room.id,
+          gameState.players.filter((p) => !p.isAI),
+          aiGamePlayer
+        );
+        break;
+      case "dice-roll":
+        newState = createDiceRollState(
           room.id,
           gameState.players.filter((p) => !p.isAI),
           aiGamePlayer
@@ -472,6 +495,45 @@ export const useGameStore = create<GameStore>((set, get) => ({
     };
 
     const newState = applyCoinFlipAction(cfState, action);
+    set({ gameState: newState });
+
+    if (newState.status === "finished") {
+      set({ isPlaying: false, showResult: true });
+    }
+
+    const room = useRoomStore.getState().room;
+    if (room) {
+      peerManager.broadcast("game_action", { action, newState });
+    }
+  },
+
+  /**
+   * Make Dice Roll
+   */
+  makeDiceRoll: (value: DiceValue, forPlayerId?: string) => {
+    const { gameState, isPlaying } = get();
+    if (!gameState || !isPlaying) return;
+
+    // Type guard for Dice Roll
+    if (!("player1HasRolled" in gameState)) return;
+
+    const drState = gameState as DiceRollState;
+    const user = useUserStore.getState().user;
+    const playerId = forPlayerId ?? user?.id;
+    if (!playerId) return;
+
+    if (playerId !== drState.player1 && playerId !== drState.player2) {
+      return;
+    }
+
+    const action: DiceRollAction = {
+      type: "roll_dice",
+      playerId,
+      timestamp: Date.now(),
+      data: { value },
+    };
+
+    const newState = applyDiceRollAction(drState, action);
     set({ gameState: newState });
 
     if (newState.status === "finished") {

@@ -751,6 +751,17 @@ export const GAMES: GameMeta[] = [
     status: "available",
   },
   {
+    slug: "dice-roll",
+    name: "Dice Roll",
+    nameTh: "โยนลูกเต๋า",
+    category: "casual_multiplayer",
+    subcategory: "duel",
+    minPlayers: 2,
+    maxPlayers: 2,
+    icon: "🎲",
+    status: "available",
+  },
+  {
     slug: "typing-duel",
     name: "Fast Typing Duel",
     nameTh: "แข่งพิมพ์",

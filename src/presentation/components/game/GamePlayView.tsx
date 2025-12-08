@@ -3,6 +3,7 @@
 import { useRoomStore } from "@/src/presentation/stores/roomStore";
 import { CoinFlipView } from "../games/coin-flip/CoinFlipView";
 import { ConnectFourView } from "../games/connect-four/ConnectFourView";
+import { DiceRollView } from "../games/dice-roll/DiceRollView";
 import { RockPaperScissorsView } from "../games/rock-paper-scissors/RockPaperScissorsView";
 import { TicTacToeView } from "../games/tictactoe/TicTacToeView";
 import { GameLayout } from "./GameLayout";
@@ -37,6 +38,9 @@ export function GamePlayView() {
 
     case "coin-flip":
       return <CoinFlipView />;
+
+    case "dice-roll":
+      return <DiceRollView />;
 
     default:
       return (

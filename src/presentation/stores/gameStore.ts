@@ -35,6 +35,11 @@ import {
   applyTicTacToeAction,
   createTicTacToeState,
 } from "@/src/domain/types/gameState";
+import type { GomokuState } from "@/src/domain/types/gomokuState";
+import {
+  applyGomokuAction,
+  createGomokuState,
+} from "@/src/domain/types/gomokuState";
 import type {
   RockPaperScissorsAction,
   RockPaperScissorsState,
@@ -58,7 +63,8 @@ type AnyGameState =
   | ConnectFourState
   | RockPaperScissorsState
   | CoinFlipState
-  | DiceRollState;
+  | DiceRollState
+  | GomokuState;
 
 /**
  * Game Store State
@@ -178,6 +184,9 @@ export const useGameStore = create<GameStore>()(
           case "dice-roll":
             state = createDiceRollState(room.id, gamePlayers, aiGamePlayer);
             break;
+          case "gomoku":
+            state = createGomokuState(room.id, gamePlayers, aiGamePlayer);
+            break;
           case "tic-tac-toe":
           default:
             state = createTicTacToeState(room.id, gamePlayers, aiGamePlayer);
@@ -276,6 +285,13 @@ export const useGameStore = create<GameStore>()(
               aiGamePlayer
             );
             break;
+          case "gomoku":
+            newState = createGomokuState(
+              room.id,
+              gameState.players.filter((p) => !p.isAI),
+              aiGamePlayer
+            );
+            break;
           case "tic-tac-toe":
           default:
             newState = createTicTacToeState(
@@ -310,56 +326,78 @@ export const useGameStore = create<GameStore>()(
         const { gameState, isPlaying } = get();
         if (!gameState || !isPlaying) return;
 
-        // Type guard for TicTacToe
-        if (!("playerX" in gameState) || !("playerO" in gameState)) return;
-
-        const ttState = gameState as TicTacToeState;
         const user = useUserStore.getState().user;
-
-        // Determine which player is making the move
         const playerId = forPlayerId ?? user?.id;
         if (!playerId) return;
 
-        // Check if it's this player's turn
-        if (ttState.currentTurn !== playerId) {
-          console.log("[placeMark] Not this player's turn:", {
-            currentTurn: ttState.currentTurn,
+        // Handle TicTacToe
+        if ("playerX" in gameState && "playerO" in gameState) {
+          const ttState = gameState as TicTacToeState;
+
+          if (ttState.currentTurn !== playerId) return;
+          if (ttState.board[cellIndex] !== null) return;
+
+          const action: TicTacToeAction = {
+            type: "place_mark",
             playerId,
-          });
+            timestamp: Date.now(),
+            data: { cellIndex },
+          };
+
+          const newState = applyTicTacToeAction(ttState, action);
+          newState.players = newState.players.map((p) => ({
+            ...p,
+            isActive: p.odId === newState.currentTurn,
+          }));
+
+          set({ gameState: newState, selectedCell: null });
+          if (newState.status === "finished") {
+            set({ isPlaying: false, showResult: true });
+          }
+
+          const room = useRoomStore.getState().room;
+          if (room) {
+            peerManager.broadcast("game_action", { action, newState });
+          }
           return;
         }
 
-        // Check if cell is empty
-        if (ttState.board[cellIndex] !== null) return;
+        // Handle Gomoku (board size 225 = 15x15)
+        if (
+          "lastMove" in gameState &&
+          "player1" in gameState &&
+          "player2" in gameState &&
+          Array.isArray((gameState as { board?: unknown[] }).board) &&
+          (gameState as { board: unknown[] }).board.length === 225
+        ) {
+          const gmState = gameState as GomokuState;
 
-        // Create action
-        const action: TicTacToeAction = {
-          type: "place_mark",
-          playerId,
-          timestamp: Date.now(),
-          data: { cellIndex },
-        };
+          if (gmState.currentTurn !== playerId) return;
+          if (gmState.board[cellIndex] !== null) return;
 
-        // Apply action locally
-        const newState = applyTicTacToeAction(ttState, action);
+          const action = {
+            type: "place_stone" as const,
+            playerId,
+            timestamp: Date.now(),
+            data: { cellIndex },
+          };
 
-        // Update active player
-        newState.players = newState.players.map((p) => ({
-          ...p,
-          isActive: p.odId === newState.currentTurn,
-        }));
+          const newState = applyGomokuAction(gmState, action);
+          newState.players = newState.players.map((p) => ({
+            ...p,
+            isActive: p.odId === newState.currentTurn,
+          }));
 
-        set({ gameState: newState, selectedCell: null });
+          set({ gameState: newState, selectedCell: null });
+          if (newState.status === "finished") {
+            set({ isPlaying: false, showResult: true });
+          }
 
-        // Check if game ended
-        if (newState.status === "finished") {
-          set({ isPlaying: false, showResult: true });
-        }
-
-        // Broadcast action
-        const room = useRoomStore.getState().room;
-        if (room) {
-          peerManager.broadcast("game_action", { action, newState });
+          const room = useRoomStore.getState().room;
+          if (room) {
+            peerManager.broadcast("game_action", { action, newState });
+          }
+          return;
         }
       },
 

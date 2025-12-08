@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CoinFlipView } from "../games/coin-flip/CoinFlipView";
 import { ConnectFourView } from "../games/connect-four/ConnectFourView";
 import { DiceRollView } from "../games/dice-roll/DiceRollView";
+import { GomokuView } from "../games/gomoku/GomokuView";
 import { RockPaperScissorsView } from "../games/rock-paper-scissors/RockPaperScissorsView";
 import { TicTacToeView } from "../games/tictactoe/TicTacToeView";
 import { GameLayout } from "./GameLayout";
@@ -147,6 +148,9 @@ export function GamePlayView() {
 
     case "dice-roll":
       return <DiceRollView />;
+
+    case "gomoku":
+      return <GomokuView />;
 
     default:
       return (

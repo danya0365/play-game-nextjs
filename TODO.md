@@ -95,7 +95,7 @@
 | 4   | Go                | `go`               | ⏳ Pending  |
 | 5   | Connect 4         | `connect-four`     | ✅ Complete |
 | 6   | Tic Tac Toe       | `tic-tac-toe`      | ✅ Complete |
-| 7   | Gomoku            | `gomoku`           | ⏳ Pending  |
+| 7   | Gomoku            | `gomoku`           | ✅ Complete |
 | 8   | Nine Men's Morris | `nine-mens-morris` | ⏳ Pending  |
 | 9   | Battleship        | `battleship`       | ⏳ Pending  |
 

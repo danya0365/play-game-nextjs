@@ -397,6 +397,8 @@ export function use[GameName]Game() {
       }
     },
     moveDelay: 600,  // Adjust for your game
+    // IMPORTANT: Provide fresh state getter to avoid stale closures
+    getLatestState: () => useGameStore.getState().gameState as [GameName]State | null,
   });
 
   // Game-specific: cell/move handler

@@ -8,21 +8,23 @@ import {
   searchGames,
 } from "@/src/domain/data/games";
 import type { GameCategoryKey, GameMeta } from "@/src/domain/types/game";
-import { ChevronRight, Clock, Filter, Search, Users } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState } from "react";
+import { Search, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GameCarousel } from "./GameCarousel";
 
 interface GamesViewProps {
   initialCategory?: GameCategoryKey | null;
 }
 
 /**
- * Games List View Component
+ * Games List View Component - Full viewport, no scroll design
  */
 export function GamesView({ initialCategory }: GamesViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] =
     useState<GameCategoryKey | null>(initialCategory || null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const categories = useMemo(() => getCategoriesWithCounts(), []);
 
@@ -40,209 +42,115 @@ export function GamesView({ initialCategory }: GamesViewProps) {
     return games;
   }, [searchQuery, selectedCategory]);
 
-  // Group games by category for display
-  const groupedGames = useMemo(() => {
-    if (selectedCategory) {
-      return { [selectedCategory]: filteredGames };
-    }
-
-    return filteredGames.reduce((acc, game) => {
-      if (!acc[game.category]) {
-        acc[game.category] = [];
+  // Keyboard shortcut for search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
       }
-      acc[game.category].push(game);
-      return acc;
-    }, {} as Record<GameCategoryKey, GameMeta[]>);
-  }, [filteredGames, selectedCategory]);
+      if (e.key === "Escape") {
+        searchInputRef.current?.blur();
+        setIsSearchFocused(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">เกมทั้งหมด</h1>
-        <p className="text-muted">
-          เลือกเกมที่คุณต้องการเล่นกับเพื่อน มีมากกว่า {GAMES.length} เกม
-        </p>
-      </div>
+    <div className="h-[calc(100vh-64px)] flex flex-col overflow-hidden bg-background">
+      {/* Top Bar - Search & Filters */}
+      <div className="shrink-0 px-4 sm:px-8 py-4 border-b border-border bg-surface/50 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto">
+          {/* Title & Search Row */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold">🎮 เกมทั้งหมด</h1>
+              <p className="text-sm text-muted mt-1">
+                {filteredGames.length} เกม
+                {searchQuery && ` • ค้นหา "${searchQuery}"`}
+                {selectedCategory &&
+                  ` • ${GAME_CATEGORIES[selectedCategory].nameTh}`}
+              </p>
+            </div>
 
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted" />
-          <input
-            type="text"
-            placeholder="ค้นหาเกม..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-info/50 focus:border-info transition-colors"
-          />
-        </div>
+            {/* Search Input */}
+            <div className="relative w-full sm:w-auto">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted" />
+              <input
+                ref={searchInputRef}
+                type="text"
+                placeholder="ค้นหาเกม... (⌘K)"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                className={`w-full sm:w-64 pl-9 pr-8 py-2 rounded-full border bg-background text-sm focus:outline-none transition-all duration-200 ${
+                  isSearchFocused
+                    ? "border-info ring-2 ring-info/20 sm:w-80"
+                    : "border-border hover:border-info/50"
+                }`}
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
 
-        {/* Category Filter */}
-        <div className="relative">
-          <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted pointer-events-none" />
-          <select
-            value={selectedCategory || ""}
-            onChange={(e) =>
-              setSelectedCategory((e.target.value as GameCategoryKey) || null)
-            }
-            className="pl-10 pr-8 py-2.5 rounded-lg border border-border bg-surface focus:outline-none focus:ring-2 focus:ring-info/50 focus:border-info transition-colors appearance-none cursor-pointer min-w-[180px]"
-          >
-            <option value="">ทุกหมวดหมู่</option>
+          {/* Category Pills */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            <button
+              onClick={() => setSelectedCategory(null)}
+              className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                !selectedCategory
+                  ? "bg-info text-white shadow-lg shadow-info/25"
+                  : "bg-background border border-border hover:border-info/50 hover:bg-surface"
+              }`}
+            >
+              ทั้งหมด
+              <span className="ml-1.5 opacity-70">({GAMES.length})</span>
+            </button>
             {categories.map((cat) => (
-              <option key={cat.key} value={cat.key}>
-                {cat.icon} {cat.nameTh} ({cat.count})
-              </option>
+              <button
+                key={cat.key}
+                onClick={() =>
+                  setSelectedCategory(
+                    selectedCategory === cat.key ? null : cat.key
+                  )
+                }
+                className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                  selectedCategory === cat.key
+                    ? "bg-info text-white shadow-lg shadow-info/25"
+                    : "bg-background border border-border hover:border-info/50 hover:bg-surface"
+                }`}
+              >
+                <span className="mr-1.5">{cat.icon}</span>
+                {cat.nameTh}
+                <span className="ml-1.5 opacity-70">({cat.count})</span>
+              </button>
             ))}
-          </select>
+          </div>
         </div>
       </div>
 
-      {/* Category Pills (Mobile Scroll) */}
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-6 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap scrollbar-hide">
-        <button
-          onClick={() => setSelectedCategory(null)}
-          className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-            !selectedCategory
-              ? "bg-info text-white"
-              : "bg-surface border border-border hover:border-info/50"
-          }`}
-        >
-          ทั้งหมด ({GAMES.length})
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat.key}
-            onClick={() => setSelectedCategory(cat.key)}
-            className={`shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-              selectedCategory === cat.key
-                ? "bg-info text-white"
-                : "bg-surface border border-border hover:border-info/50"
-            }`}
-          >
-            {cat.icon} {cat.nameTh} ({cat.count})
-          </button>
-        ))}
+      {/* Carousel Area - Takes remaining space */}
+      <div className="flex-1 min-h-0 py-8">
+        <GameCarousel games={filteredGames} />
       </div>
 
-      {/* Results Count */}
-      <div className="text-sm text-muted mb-4">
-        พบ {filteredGames.length} เกม
-        {searchQuery && ` สำหรับ "${searchQuery}"`}
-        {selectedCategory &&
-          ` ในหมวด ${GAME_CATEGORIES[selectedCategory].nameTh}`}
+      {/* Bottom Hint */}
+      <div className="shrink-0 py-4 text-center text-xs text-muted border-t border-border/50">
+        <span className="hidden sm:inline">
+          ใช้ ← → หรือลากเพื่อเลื่อนดูเกม • กด Enter เพื่อเล่น
+        </span>
+        <span className="sm:hidden">ลากซ้าย-ขวาเพื่อเลื่อนดูเกม</span>
       </div>
-
-      {/* Games Grid by Category */}
-      {filteredGames.length === 0 ? (
-        <div className="text-center py-16">
-          <div className="text-6xl mb-4">🎮</div>
-          <h3 className="text-xl font-semibold mb-2">ไม่พบเกม</h3>
-          <p className="text-muted">ลองค้นหาด้วยคำอื่น หรือเลือกหมวดหมู่อื่น</p>
-        </div>
-      ) : (
-        <div className="space-y-10">
-          {(Object.keys(groupedGames) as GameCategoryKey[]).map(
-            (categoryKey) => {
-              const games = groupedGames[categoryKey];
-              if (!games || games.length === 0) return null;
-              const category = GAME_CATEGORIES[categoryKey];
-
-              return (
-                <section key={categoryKey}>
-                  {/* Category Header */}
-                  {!selectedCategory && (
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-bold flex items-center gap-2">
-                        <span>{category.icon}</span>
-                        <span>{category.nameTh}</span>
-                        <span className="text-sm font-normal text-muted">
-                          ({games.length})
-                        </span>
-                      </h2>
-                      <button
-                        onClick={() => setSelectedCategory(categoryKey)}
-                        className="text-sm text-info hover:text-info-dark flex items-center gap-1"
-                      >
-                        ดูทั้งหมด
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Games Grid */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {games.map((game) => (
-                      <GameCard key={game.slug} game={game} />
-                    ))}
-                  </div>
-                </section>
-              );
-            }
-          )}
-        </div>
-      )}
     </div>
-  );
-}
-
-/**
- * Game Card Component
- */
-function GameCard({ game }: { game: GameMeta }) {
-  const isAvailable = game.status === "available";
-
-  return (
-    <Link
-      href={isAvailable ? `/games/${game.slug}` : "#"}
-      className={`group block p-4 rounded-xl border bg-surface transition-all ${
-        isAvailable
-          ? "border-border hover:border-info/50 hover:shadow-lg cursor-pointer"
-          : "border-border/50 opacity-60 cursor-not-allowed"
-      }`}
-      onClick={(e) => !isAvailable && e.preventDefault()}
-    >
-      {/* Icon and Status */}
-      <div className="flex items-start justify-between mb-3">
-        <span className="text-4xl">{game.icon}</span>
-        {game.status === "coming_soon" && (
-          <span className="px-2 py-0.5 text-xs rounded-full bg-warning/10 text-warning font-medium">
-            เร็วๆ นี้
-          </span>
-        )}
-        {game.status === "maintenance" && (
-          <span className="px-2 py-0.5 text-xs rounded-full bg-error/10 text-error font-medium">
-            ปิดปรับปรุง
-          </span>
-        )}
-      </div>
-
-      {/* Title */}
-      <h3
-        className={`font-semibold mb-1 ${
-          isAvailable ? "group-hover:text-info" : ""
-        } transition-colors`}
-      >
-        {game.nameTh || game.name}
-      </h3>
-      <p className="text-sm text-muted mb-3">{game.name}</p>
-
-      {/* Players Info */}
-      <div className="flex items-center gap-3 text-xs text-muted">
-        <div className="flex items-center gap-1">
-          <Users className="w-3.5 h-3.5" />
-          <span>
-            {game.minPlayers === game.maxPlayers
-              ? `${game.minPlayers} คน`
-              : `${game.minPlayers}-${game.maxPlayers} คน`}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <Clock className="w-3.5 h-3.5" />
-          <span>5-15 นาที</span>
-        </div>
-      </div>
-    </Link>
   );
 }

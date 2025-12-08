@@ -22,32 +22,28 @@
 ### ✅ Completed
 
 - [x] Initialize Next.js project with dependencies
+- [x] MainLayout with Header, Footer, ThemeToggle
+- [x] User Store (Zustand + LocalForage)
+- [x] Landing Page
+- [x] Games List Page (รวมเกมทั้งหมด)
+- [x] Game Room System (สร้างห้อง / เข้าห้อง via PeerJS)
+- [x] PeerJS Connection Manager
+- [x] Room State Synchronization
+- [x] Player Presence System
+- [x] Base Game Canvas Component (React Three + Rapier)
+- [x] Game State Machine
+- [x] AI System (Easy/Medium/Hard)
+- [x] Sound System (SFX + BGM)
+- [x] Connection Status (Ping-Pong)
+- [x] Reconnect after refresh
 
 ### 🚧 In Progress
 
-- [ ] **MainLayout** - Header, Footer, ThemeToggle (dark mode)
+- [ ] เพิ่มเกมใหม่
 
 ### 📝 Pending
 
-#### 1. Foundation & UI
-
-- [ ] MainLayout with Header, Footer, ThemeToggle
-- [ ] User Store (Zustand + LocalForage)
-- [ ] Landing Page
-- [ ] Games List Page (รวมเกมทั้งหมด)
-- [ ] Game Room System (สร้างห้อง / เข้าห้อง via PeerJS)
-
-#### 2. P2P Infrastructure
-
-- [ ] PeerJS Connection Manager
-- [ ] Room State Synchronization
-- [ ] Player Presence System
-
-#### 3. Game Canvas Template
-
-- [ ] Base Game Canvas Component (React Three + Rapier)
-- [ ] Game State Machine
-- [ ] Input System (Keyboard/Touch)
+- [ ] เพิ่ม More Games
 
 ---
 
@@ -91,17 +87,17 @@
 
 #### วางแผน / กลยุทธ์ (Strategy)
 
-| #   | เกม               | Slug               | Status     |
-| --- | ----------------- | ------------------ | ---------- |
-| 1   | Chess             | `chess`            | ⏳ Pending |
-| 2   | Checkers          | `checkers`         | ⏳ Pending |
-| 3   | Reversi / Othello | `reversi`          | ⏳ Pending |
-| 4   | Go                | `go`               | ⏳ Pending |
-| 5   | Connect 4         | `connect-four`     | ⏳ Pending |
-| 6   | Tic Tac Toe       | `tic-tac-toe`      | ⏳ Pending |
-| 7   | Gomoku            | `gomoku`           | ⏳ Pending |
-| 8   | Nine Men's Morris | `nine-mens-morris` | ⏳ Pending |
-| 9   | Battleship        | `battleship`       | ⏳ Pending |
+| #   | เกม               | Slug               | Status      |
+| --- | ----------------- | ------------------ | ----------- |
+| 1   | Chess             | `chess`            | ⏳ Pending  |
+| 2   | Checkers          | `checkers`         | ⏳ Pending  |
+| 3   | Reversi / Othello | `reversi`          | ⏳ Pending  |
+| 4   | Go                | `go`               | ⏳ Pending  |
+| 5   | Connect 4         | `connect-four`     | ✅ Complete |
+| 6   | Tic Tac Toe       | `tic-tac-toe`      | ✅ Complete |
+| 7   | Gomoku            | `gomoku`           | ⏳ Pending  |
+| 8   | Nine Men's Morris | `nine-mens-morris` | ⏳ Pending  |
+| 9   | Battleship        | `battleship`       | ⏳ Pending  |
 
 #### ปาร์ตี้ / ลุ้นดวง (Party)
 
@@ -178,11 +174,14 @@
 
 #### แข่งตัวต่อตัว (Duel)
 
-| #   | เกม                 | Slug                  | Status     |
-| --- | ------------------- | --------------------- | ---------- |
-| 1   | Rock Paper Scissors | `rock-paper-scissors` | ⏳ Pending |
-| 2   | Fast Typing Duel    | `typing-duel`         | ⏳ Pending |
-| 3   | Reaction Speed Test | `reaction-test`       | ⏳ Pending |
+| #   | เกม                 | Slug                  | Status      |
+| --- | ------------------- | --------------------- | ----------- |
+| 1   | Rock Paper Scissors | `rock-paper-scissors` | ✅ Complete |
+| 2   | Coin Flip           | `coin-flip`           | ✅ Complete |
+| 3   | Dice Roll           | `dice-roll`           | ✅ Complete |
+| 4   | Higher Lower        | `higher-lower`        | ✅ Complete |
+| 5   | Fast Typing Duel    | `typing-duel`         | ⏳ Pending  |
+| 6   | Reaction Speed Test | `reaction-test`       | ⏳ Pending  |
 
 #### สนามประลอง (Arena)
 

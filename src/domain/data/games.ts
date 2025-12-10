@@ -70,7 +70,7 @@ export const GAMES: GameMeta[] = [
     minPlayers: 2,
     maxPlayers: 8,
     icon: "🎴",
-    status: "coming_soon",
+    status: "available",
   },
   {
     slug: "kao-kae",

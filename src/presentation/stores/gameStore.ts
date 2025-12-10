@@ -41,6 +41,15 @@ import {
   createGomokuState,
 } from "@/src/domain/types/gomokuState";
 import type {
+  PokDengAction,
+  PokDengState,
+} from "@/src/domain/types/pokdengState";
+import {
+  applyPokDengAction,
+  createPokDengState,
+  dealCards,
+} from "@/src/domain/types/pokdengState";
+import type {
   RockPaperScissorsAction,
   RockPaperScissorsState,
   RPSChoice,
@@ -64,7 +73,8 @@ type AnyGameState =
   | RockPaperScissorsState
   | CoinFlipState
   | DiceRollState
-  | GomokuState;
+  | GomokuState
+  | PokDengState;
 
 /**
  * Game Store State
@@ -104,6 +114,12 @@ interface GameActions {
 
   // Actions - Dice Roll
   makeDiceRoll: (value: DiceValue, forPlayerId?: string) => void;
+
+  // Actions - Pok Deng
+  pokDengDeal: () => void;
+  pokDengDraw: (forPlayerId?: string) => void;
+  pokDengStand: (forPlayerId?: string) => void;
+  pokDengReveal: (forPlayerId?: string) => void;
 
   // P2P handlers
   handleGameMessage: (message: P2PMessage) => void;
@@ -186,6 +202,9 @@ export const useGameStore = create<GameStore>()(
             break;
           case "gomoku":
             state = createGomokuState(room.id, gamePlayers, aiGamePlayer);
+            break;
+          case "pokdeng":
+            state = createPokDengState(room.id, gamePlayers, aiGamePlayer);
             break;
           case "tic-tac-toe":
           default:
@@ -287,6 +306,13 @@ export const useGameStore = create<GameStore>()(
             break;
           case "gomoku":
             newState = createGomokuState(
+              room.id,
+              gameState.players.filter((p) => !p.isAI),
+              aiGamePlayer
+            );
+            break;
+          case "pokdeng":
+            newState = createPokDengState(
               room.id,
               gameState.players.filter((p) => !p.isAI),
               aiGamePlayer
@@ -584,6 +610,146 @@ export const useGameStore = create<GameStore>()(
         };
 
         const newState = applyDiceRollAction(drState, action);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Pok Deng: Deal cards to all players
+       */
+      pokDengDeal: () => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Pok Deng
+        if (!("dealerHand" in gameState) || !("playerHands" in gameState))
+          return;
+
+        const pdState = gameState as PokDengState;
+
+        // Only deal in dealing phase
+        if (pdState.phase !== "dealing") return;
+
+        const newState = dealCards(pdState);
+        set({ gameState: newState });
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_state", { state: newState });
+        }
+      },
+
+      /**
+       * Pok Deng: Draw card
+       */
+      pokDengDraw: (forPlayerId?: string) => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Pok Deng
+        if (!("dealerHand" in gameState) || !("playerHands" in gameState))
+          return;
+
+        const pdState = gameState as PokDengState;
+        const user = useUserStore.getState().user;
+        const playerId = forPlayerId ?? user?.id;
+        if (!playerId) return;
+
+        const action: PokDengAction = {
+          type: "draw_card",
+          playerId,
+          timestamp: Date.now(),
+          data: {},
+        };
+
+        const newState = applyPokDengAction(pdState, action);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Pok Deng: Stand (don't draw)
+       */
+      pokDengStand: (forPlayerId?: string) => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Pok Deng
+        if (!("dealerHand" in gameState) || !("playerHands" in gameState))
+          return;
+
+        const pdState = gameState as PokDengState;
+        const user = useUserStore.getState().user;
+        const playerId = forPlayerId ?? user?.id;
+        if (!playerId) return;
+
+        const action: PokDengAction = {
+          type: "stand",
+          playerId,
+          timestamp: Date.now(),
+          data: {},
+        };
+
+        const newState = applyPokDengAction(pdState, action);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Pok Deng: Reveal cards (dealer action)
+       */
+      pokDengReveal: (forPlayerId?: string) => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Pok Deng
+        if (!("dealerHand" in gameState) || !("playerHands" in gameState))
+          return;
+
+        const pdState = gameState as PokDengState;
+
+        // Only allow reveal in revealing phase
+        if (pdState.phase !== "revealing") return;
+
+        const user = useUserStore.getState().user;
+        const playerId = forPlayerId ?? user?.id;
+        if (!playerId) return;
+
+        // Only dealer can reveal
+        if (playerId !== pdState.dealer) return;
+
+        const action: PokDengAction = {
+          type: "reveal",
+          playerId,
+          timestamp: Date.now(),
+          data: {},
+        };
+
+        const newState = applyPokDengAction(pdState, action);
         set({ gameState: newState });
 
         if (newState.status === "finished") {

@@ -40,6 +40,13 @@ import {
   applyGomokuAction,
   createGomokuState,
 } from "@/src/domain/types/gomokuState";
+import type { KaengAction, KaengState } from "@/src/domain/types/kaengState";
+import {
+  applyKaengAction,
+  createKaengState,
+  dealCards as dealKaengCards,
+  revealAndCalculate,
+} from "@/src/domain/types/kaengState";
 import type {
   PokDengAction,
   PokDengState,
@@ -74,7 +81,8 @@ type AnyGameState =
   | CoinFlipState
   | DiceRollState
   | GomokuState
-  | PokDengState;
+  | PokDengState
+  | KaengState;
 
 /**
  * Game Store State
@@ -120,6 +128,12 @@ interface GameActions {
   pokDengDraw: (forPlayerId?: string) => void;
   pokDengStand: (forPlayerId?: string) => void;
   pokDengReveal: (forPlayerId?: string) => void;
+
+  // Actions - Kaeng
+  kaengDeal: () => void;
+  kaengReveal: (forPlayerId?: string) => void;
+  kaengFold: (forPlayerId?: string) => void;
+  kaengBankerReveal: () => void;
 
   // P2P handlers
   handleGameMessage: (message: P2PMessage) => void;
@@ -205,6 +219,9 @@ export const useGameStore = create<GameStore>()(
             break;
           case "pokdeng":
             state = createPokDengState(room.id, gamePlayers, aiGamePlayer);
+            break;
+          case "kaeng":
+            state = createKaengState(room.id, gamePlayers, aiGamePlayer);
             break;
           case "tic-tac-toe":
           default:
@@ -759,6 +776,118 @@ export const useGameStore = create<GameStore>()(
         const room = useRoomStore.getState().room;
         if (room) {
           peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Kaeng: Deal cards to all players
+       */
+      kaengDeal: () => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Kaeng
+        if (!("banker" in gameState) || !("potAmount" in gameState)) return;
+
+        const kgState = gameState as KaengState;
+
+        // Only deal in dealing phase
+        if (kgState.phase !== "dealing") return;
+
+        const newState = dealKaengCards(kgState);
+        set({ gameState: newState });
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_state", { state: newState });
+        }
+      },
+
+      /**
+       * Kaeng: Player reveals their cards
+       */
+      kaengReveal: (forPlayerId?: string) => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Kaeng
+        if (!("banker" in gameState) || !("potAmount" in gameState)) return;
+
+        const kgState = gameState as KaengState;
+        const user = useUserStore.getState().user;
+        const playerId = forPlayerId ?? user?.id;
+        if (!playerId) return;
+
+        const action: KaengAction = {
+          type: "reveal",
+          playerId,
+          timestamp: Date.now(),
+        };
+
+        const newState = applyKaengAction(kgState, action);
+        set({ gameState: newState });
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Kaeng: Player folds
+       */
+      kaengFold: (forPlayerId?: string) => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Kaeng
+        if (!("banker" in gameState) || !("potAmount" in gameState)) return;
+
+        const kgState = gameState as KaengState;
+        const user = useUserStore.getState().user;
+        const playerId = forPlayerId ?? user?.id;
+        if (!playerId) return;
+
+        const action: KaengAction = {
+          type: "fold",
+          playerId,
+          timestamp: Date.now(),
+        };
+
+        const newState = applyKaengAction(kgState, action);
+        set({ gameState: newState });
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Kaeng: Banker reveals and calculates results
+       */
+      kaengBankerReveal: () => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Kaeng
+        if (!("banker" in gameState) || !("potAmount" in gameState)) return;
+
+        const kgState = gameState as KaengState;
+
+        // Only allow in revealing phase
+        if (kgState.phase !== "revealing") return;
+
+        const newState = revealAndCalculate(kgState);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_state", { state: newState });
         }
       },
 

@@ -73,6 +73,17 @@ export const GAMES: GameMeta[] = [
     status: "available",
   },
   {
+    slug: "kaeng",
+    name: "Kaeng",
+    nameTh: "ไพ่แคง",
+    category: "card_games",
+    subcategory: "classic",
+    minPlayers: 2,
+    maxPlayers: 5,
+    icon: "🃏",
+    status: "available",
+  },
+  {
     slug: "kao-kae",
     name: "Kao Kae",
     nameTh: "เก้าเก",

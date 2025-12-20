@@ -1,69 +1,79 @@
 "use client";
 
 import type {
-  CoinFlipAction,
-  CoinFlipState,
-  CoinGuess,
+    BlackjackAction,
+    BlackjackState
+} from "@/src/domain/types/blackjackState";
+import {
+    applyBlackjackAction,
+    createBlackjackState,
+    dealCards as dealBlackjackCards,
+    playDealerTurn
+} from "@/src/domain/types/blackjackState";
+import type {
+    CoinFlipAction,
+    CoinFlipState,
+    CoinGuess,
 } from "@/src/domain/types/coinFlipState";
 import {
-  applyCoinFlipAction,
-  createCoinFlipState,
+    applyCoinFlipAction,
+    createCoinFlipState,
 } from "@/src/domain/types/coinFlipState";
 import type {
-  ConnectFourAction,
-  ConnectFourState,
+    ConnectFourAction,
+    ConnectFourState,
 } from "@/src/domain/types/connectFourState";
 import {
-  applyConnectFourAction,
-  createConnectFourState,
+    applyConnectFourAction,
+    createConnectFourState,
 } from "@/src/domain/types/connectFourState";
 import type {
-  DiceRollAction,
-  DiceRollState,
-  DiceValue,
+    DiceRollAction,
+    DiceRollState,
+    DiceValue,
 } from "@/src/domain/types/diceRollState";
 import {
-  applyDiceRollAction,
-  createDiceRollState,
+    applyDiceRollAction,
+    createDiceRollState,
 } from "@/src/domain/types/diceRollState";
 import type {
-  GamePlayer,
-  TicTacToeAction,
-  TicTacToeState,
+    GamePlayer,
+    TicTacToeAction,
+    TicTacToeState,
 } from "@/src/domain/types/gameState";
 import {
-  applyTicTacToeAction,
-  createTicTacToeState,
+    applyTicTacToeAction,
+    createTicTacToeState,
 } from "@/src/domain/types/gameState";
 import type { GomokuState } from "@/src/domain/types/gomokuState";
 import {
-  applyGomokuAction,
-  createGomokuState,
+    applyGomokuAction,
+    createGomokuState,
 } from "@/src/domain/types/gomokuState";
 import type { KaengAction, KaengState } from "@/src/domain/types/kaengState";
 import {
-  applyKaengAction,
-  createKaengState,
-  dealCards as dealKaengCards,
-  revealAndCalculate,
+    applyKaengAction,
+    createKaengState,
+    dealCards as dealKaengCards,
+    revealAndCalculate,
 } from "@/src/domain/types/kaengState";
 import type {
-  PokDengAction,
-  PokDengState,
+    PokDengAction,
+    PokDengState,
 } from "@/src/domain/types/pokdengState";
 import {
-  applyPokDengAction,
-  createPokDengState,
-  dealCards,
+    applyPokDengAction,
+    createPokDengState,
+    dealCards,
 } from "@/src/domain/types/pokdengState";
 import type {
-  RockPaperScissorsAction,
-  RockPaperScissorsState,
-  RPSChoice,
+    RockPaperScissorsAction,
+    RockPaperScissorsState,
+    RPSChoice,
 } from "@/src/domain/types/rockPaperScissorsState";
 import {
-  applyRockPaperScissorsAction,
-  createRockPaperScissorsState,
+    applyRockPaperScissorsAction,
+    createRockPaperScissorsState,
 } from "@/src/domain/types/rockPaperScissorsState";
 import type { P2PMessage } from "@/src/domain/types/room";
 import { peerManager } from "@/src/infrastructure/p2p/peerManager";
@@ -82,7 +92,8 @@ type AnyGameState =
   | DiceRollState
   | GomokuState
   | PokDengState
-  | KaengState;
+  | KaengState
+  | BlackjackState;
 
 /**
  * Game Store State
@@ -134,6 +145,12 @@ interface GameActions {
   kaengReveal: (forPlayerId?: string) => void;
   kaengFold: (forPlayerId?: string) => void;
   kaengBankerReveal: () => void;
+
+  // Actions - Blackjack
+  blackjackDeal: () => void;
+  blackjackHit: (forPlayerId?: string) => void;
+  blackjackStand: (forPlayerId?: string) => void;
+  blackjackDealerPlay: () => void;
 
   // P2P handlers
   handleGameMessage: (message: P2PMessage) => void;
@@ -222,6 +239,9 @@ export const useGameStore = create<GameStore>()(
             break;
           case "kaeng":
             state = createKaengState(room.id, gamePlayers, aiGamePlayer);
+            break;
+          case "blackjack":
+            state = createBlackjackState(room.id, gamePlayers, aiGamePlayer);
             break;
           case "tic-tac-toe":
           default:
@@ -330,6 +350,13 @@ export const useGameStore = create<GameStore>()(
             break;
           case "pokdeng":
             newState = createPokDengState(
+              room.id,
+              gameState.players.filter((p) => !p.isAI),
+              aiGamePlayer
+            );
+            break;
+          case "blackjack":
+            newState = createBlackjackState(
               room.id,
               gameState.players.filter((p) => !p.isAI),
               aiGamePlayer
@@ -879,6 +906,130 @@ export const useGameStore = create<GameStore>()(
         if (kgState.phase !== "revealing") return;
 
         const newState = revealAndCalculate(kgState);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_state", { state: newState });
+        }
+      },
+
+      /**
+       * Blackjack: Deal cards
+       */
+      blackjackDeal: () => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Blackjack
+        if (!("dealerHand" in gameState) || !("dealerRevealed" in gameState)) return;
+
+        const bjState = gameState as BlackjackState;
+
+        // Only deal in dealing phase
+        if (bjState.phase !== "dealing") return;
+
+        const newState = dealBlackjackCards(bjState);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_state", { state: newState });
+        }
+      },
+
+      /**
+       * Blackjack: Hit (draw card)
+       */
+      blackjackHit: (forPlayerId?: string) => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Blackjack
+        if (!("dealerHand" in gameState) || !("dealerRevealed" in gameState)) return;
+
+        const bjState = gameState as BlackjackState;
+        const user = useUserStore.getState().user;
+        const playerId = forPlayerId ?? user?.id;
+        if (!playerId) return;
+
+        const action: BlackjackAction = {
+          type: "hit",
+          playerId,
+          timestamp: Date.now(),
+        };
+
+        const newState = applyBlackjackAction(bjState, action);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Blackjack: Stand
+       */
+      blackjackStand: (forPlayerId?: string) => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Blackjack
+        if (!("dealerHand" in gameState) || !("dealerRevealed" in gameState)) return;
+
+        const bjState = gameState as BlackjackState;
+        const user = useUserStore.getState().user;
+        const playerId = forPlayerId ?? user?.id;
+        if (!playerId) return;
+
+        const action: BlackjackAction = {
+          type: "stand",
+          playerId,
+          timestamp: Date.now(),
+        };
+
+        const newState = applyBlackjackAction(bjState, action);
+        set({ gameState: newState });
+
+        if (newState.status === "finished") {
+          set({ isPlaying: false, showResult: true });
+        }
+
+        const room = useRoomStore.getState().room;
+        if (room) {
+          peerManager.broadcast("game_action", { action, newState });
+        }
+      },
+
+      /**
+       * Blackjack: Dealer plays (auto-play)
+       */
+      blackjackDealerPlay: () => {
+        const { gameState, isPlaying } = get();
+        if (!gameState || !isPlaying) return;
+
+        // Type guard for Blackjack
+        if (!("dealerHand" in gameState) || !("dealerRevealed" in gameState)) return;
+
+        const bjState = gameState as BlackjackState;
+
+        // Only in dealer turn
+        if (bjState.phase !== "dealer_turn") return;
+
+        const newState = playDealerTurn(bjState);
         set({ gameState: newState });
 
         if (newState.status === "finished") {

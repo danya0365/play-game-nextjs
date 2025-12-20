@@ -103,7 +103,7 @@ export const GAMES: GameMeta[] = [
     minPlayers: 2,
     maxPlayers: 7,
     icon: "🂡",
-    status: "coming_soon",
+    status: "available",
   },
   {
     slug: "texas-holdem",

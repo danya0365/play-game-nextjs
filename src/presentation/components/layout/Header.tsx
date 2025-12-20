@@ -17,6 +17,8 @@ export function Header() {
   const navLinks = [
     { href: "/", label: "หน้าแรก" },
     { href: "/games", label: "เกมทั้งหมด" },
+    { href: "/how-to-play", label: "วิธีเล่น" },
+    { href: "/about", label: "เกี่ยวกับ" },
   ];
 
   return (

@@ -52,10 +52,13 @@ export function Header() {
 
             {/* User Info */}
             {isHydrated && user ? (
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border">
+              <Link
+                href="/profile"
+                className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface border border-border hover:border-info transition-colors cursor-pointer"
+              >
                 <span className="text-lg">{user.avatar}</span>
                 <span className="text-sm font-medium">{user.nickname}</span>
-              </div>
+              </Link>
             ) : isHydrated ? (
               <Link
                 href="/setup"
@@ -98,10 +101,14 @@ export function Header() {
 
               {/* Mobile User Info */}
               {isHydrated && user ? (
-                <div className="flex items-center gap-2 px-4 py-2 mt-2 border-t border-border">
+                <Link
+                  href="/profile"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-2 px-4 py-2 mt-2 border-t border-border hover:bg-muted-light dark:hover:bg-muted-dark transition-colors"
+                >
                   <span className="text-lg">{user.avatar}</span>
                   <span className="text-sm font-medium">{user.nickname}</span>
-                </div>
+                </Link>
               ) : isHydrated ? (
                 <Link
                   href="/setup"

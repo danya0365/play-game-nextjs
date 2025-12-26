@@ -4,10 +4,13 @@ import { useRoomStore } from "@/src/presentation/stores/roomStore";
 import { AlertTriangle, Home, Loader2, RefreshCw, Wifi } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { BlackjackView } from "../games/blackjack/BlackjackView";
 import { CoinFlipView } from "../games/coin-flip/CoinFlipView";
 import { ConnectFourView } from "../games/connect-four/ConnectFourView";
 import { DiceRollView } from "../games/dice-roll/DiceRollView";
 import { GomokuView } from "../games/gomoku/GomokuView";
+import { KaengView } from "../games/kaeng/KaengView";
+import { PokDengView } from "../games/pokdeng/PokDengView";
 import { RockPaperScissorsView } from "../games/rock-paper-scissors/RockPaperScissorsView";
 import { TicTacToeView } from "../games/tictactoe/TicTacToeView";
 import { GameLayout } from "./GameLayout";
@@ -151,6 +154,15 @@ export function GamePlayView() {
 
     case "gomoku":
       return <GomokuView />;
+
+    case "pokdeng":
+      return <PokDengView />;
+
+    case "kaeng":
+      return <KaengView />;
+
+    case "blackjack":
+      return <BlackjackView />;
 
     default:
       return (

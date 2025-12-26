@@ -99,7 +99,7 @@ export function PlayerCard({
         className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
           player.isReady
             ? "bg-success/10 text-success"
-            : "bg-muted-light dark:bg-muted-dark text-muted"
+            : "bg-muted-light  text-muted"
         }`}
       >
         {player.isReady ? (
@@ -129,7 +129,7 @@ export function PlayerCard({
 export function EmptyPlayerSlot({ index }: { index: number }) {
   return (
     <div className="flex items-center gap-2 sm:gap-3 p-2 sm:p-3 rounded-xl border border-dashed border-border/50 bg-surface/30">
-      <div className="w-10 h-10 rounded-full bg-muted-light dark:bg-muted-dark flex items-center justify-center">
+      <div className="w-10 h-10 rounded-full bg-muted-light  flex items-center justify-center">
         <span className="text-muted text-lg">?</span>
       </div>
       <div className="flex-1">

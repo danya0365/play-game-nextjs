@@ -70,7 +70,18 @@ export const GAMES: GameMeta[] = [
     minPlayers: 2,
     maxPlayers: 8,
     icon: "🎴",
-    status: "coming_soon",
+    status: "available",
+  },
+  {
+    slug: "kaeng",
+    name: "Kaeng",
+    nameTh: "ไพ่แคง",
+    category: "card_games",
+    subcategory: "classic",
+    minPlayers: 2,
+    maxPlayers: 5,
+    icon: "🃏",
+    status: "available",
   },
   {
     slug: "kao-kae",
@@ -92,7 +103,7 @@ export const GAMES: GameMeta[] = [
     minPlayers: 2,
     maxPlayers: 7,
     icon: "🂡",
-    status: "coming_soon",
+    status: "available",
   },
   {
     slug: "texas-holdem",

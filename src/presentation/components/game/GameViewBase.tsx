@@ -9,14 +9,14 @@ import { ReconnectingOverlay } from "./ConnectionStatus";
 import { GameCanvas } from "./GameCanvas";
 import { GameLayout } from "./GameLayout";
 import {
-  GameResult,
-  GameResultModal,
-  GameStatus,
-  HostActionBar,
-  PlayerIndicator,
-  PlayerScore,
-  RenderModeToggle,
-  WaitingOverlay,
+    GameResult,
+    GameResultModal,
+    GameStatus,
+    HostActionBar,
+    PlayerIndicator,
+    PlayerScore,
+    RenderModeToggle,
+    WaitingOverlay,
 } from "./GameOverlays";
 
 /**
@@ -127,9 +127,11 @@ export function GameViewBase({
   );
 
   // Determine if should use 2D
+  // Default: 2D for all modes (auto defaults to 2D, user can toggle to 3D)
   const shouldUse2D =
     renderMode === "2d" ||
-    (renderMode === "auto" && (isLowEnd || !supportsWebGL));
+    renderMode === "auto" ||
+    (renderMode === "3d" && (isLowEnd || !supportsWebGL));
 
   // Toggle render mode
   const handleToggleRenderMode = () => {

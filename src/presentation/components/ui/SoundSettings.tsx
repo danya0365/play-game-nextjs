@@ -166,9 +166,7 @@ export function SoundSettings({ variant = "button" }: SoundSettingsProps) {
                     <button
                       onClick={handleToggleSound}
                       className={`relative w-12 h-6 rounded-full transition-colors ${
-                        enabled
-                          ? "bg-success"
-                          : "bg-muted-light dark:bg-muted-dark"
+                        enabled ? "bg-success" : "bg-muted-light "
                       }`}
                     >
                       <span
@@ -190,7 +188,7 @@ export function SoundSettings({ variant = "button" }: SoundSettingsProps) {
                         step="0.1"
                         value={volume}
                         onChange={handleVolumeChange}
-                        className="flex-1 h-2 bg-muted-light dark:bg-muted-dark rounded-full appearance-none cursor-pointer accent-info"
+                        className="flex-1 h-2 bg-muted-light  rounded-full appearance-none cursor-pointer accent-info"
                       />
                       <Volume2 className="w-4 h-4 text-muted shrink-0" />
                       <span className="text-sm text-muted w-8">
@@ -217,9 +215,7 @@ export function SoundSettings({ variant = "button" }: SoundSettingsProps) {
                     <button
                       onClick={handleToggleBgm}
                       className={`relative w-12 h-6 rounded-full transition-colors ${
-                        bgmPlaying
-                          ? "bg-info"
-                          : "bg-muted-light dark:bg-muted-dark"
+                        bgmPlaying ? "bg-info" : "bg-muted-light "
                       }`}
                     >
                       <span
@@ -241,7 +237,7 @@ export function SoundSettings({ variant = "button" }: SoundSettingsProps) {
                         step="0.05"
                         value={bgmVolume}
                         onChange={handleBgmVolumeChange}
-                        className="flex-1 h-2 bg-muted-light dark:bg-muted-dark rounded-full appearance-none cursor-pointer accent-info"
+                        className="flex-1 h-2 bg-muted-light  rounded-full appearance-none cursor-pointer accent-info"
                       />
                       <Volume2 className="w-4 h-4 text-muted shrink-0" />
                       <span className="text-sm text-muted w-8">
@@ -319,7 +315,7 @@ export function SoundSettings({ variant = "button" }: SoundSettingsProps) {
           <button
             onClick={handleToggleSound}
             className={`relative w-10 h-5 rounded-full transition-colors ${
-              enabled ? "bg-success" : "bg-muted-light dark:bg-muted-dark"
+              enabled ? "bg-success" : "bg-muted-light "
             }`}
           >
             <span
@@ -341,7 +337,7 @@ export function SoundSettings({ variant = "button" }: SoundSettingsProps) {
           <button
             onClick={handleToggleBgm}
             className={`relative w-10 h-5 rounded-full transition-colors ${
-              bgmPlaying ? "bg-info" : "bg-muted-light dark:bg-muted-dark"
+              bgmPlaying ? "bg-info" : "bg-muted-light "
             }`}
           >
             <span

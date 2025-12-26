@@ -126,7 +126,7 @@ export function SetupView() {
             <button
               type="button"
               onClick={handleRandomAvatar}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted-light dark:bg-muted-dark hover:bg-border transition-colors text-sm"
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted-light  hover:bg-border transition-colors text-sm"
             >
               <RefreshCw className="w-4 h-4" />
               สุ่มใหม่
